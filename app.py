@@ -46,31 +46,16 @@ def get_cnn_fear_greed():
         return 48, "Neutral"
     except: return 48, "Neutral"
 
-# 3. 공통 카드 스타일 설정 (중앙 정렬 및 크기 통일)
-card_style = """
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    background-color: #f8f9fa;
-    padding: 30px 20px;
-    border-radius: 20px;
-    text-align: center;
-    border: 2px solid #eee;
-    box-shadow: 0px 4px 10px rgba(0,0,0,0.03);
-    min-height: 280px;
-"""
-
-# 4. 메인 제목
+# 3. 메인 제목
 st.title("📈 미국 증시 및 시장 심리 실시간 현황")
 
-# 5. 업데이트 영역 (10초 주기)
+# 4. 업데이트 영역 (10초 주기)
 @st.fragment(run_every="10s")
 def update_dashboard():
     now_kst = datetime.utcnow() + timedelta(hours=9)
     current_time = now_kst.strftime('%H:%M:%S')
 
-    # --- 구역 1: 3대 지수 ---
+    # --- 구역 1: 3대 지수 (3열 배치) ---
     st.markdown("### 🏦 주요 지수 (52주 고점 대비)")
     idx_cols = st.columns(3)
     indices = {"나스닥 100": "^NDX", "S&P 500": "^GSPC", "다우 존스": "^DJI"}
@@ -79,49 +64,88 @@ def update_dashboard():
         price, high_val, rate, high_date = get_market_data(symbol)
         color = "#FF0000" if rate >= 0 else "#0000FF"
         with idx_cols[i]:
-            st.markdown(f"<h2 style='text-align: center; font-size: 28px; font-weight: 800; color: #333;'>{name}</h2>", unsafe_allow_html=True)
+            st.markdown(f"<h2 style='text-align: center; font-size: 26px; font-weight: 800; color: #333;'>{name}</h2>", unsafe_allow_html=True)
             st.markdown(f"""
-                <div style="{card_style}">
-                    <h1 style="margin: 0; color: {color}; font-size: 55px; font-weight: bold;">{rate:+.2f}%</h1>
-                    <p style="margin: 10px 0; color: #555; font-size: 20px; font-weight: 600;">현재: {price:,.2f}</p>
-                    <p style="margin: 0; font-size: 14px; color: #888; font-weight: 500;">
-                        고점: {high_val:,.2f} <br>
-                        <span style="font-size: 12px; color: #aaa;">({high_date})</span>
-                    </p>
+                <div style="
+                    display: flex;
+                    flex-direction: column;
+                    background-color: #f8f9fa;
+                    padding: 25px;
+                    border-radius: 20px;
+                    text-align: center;
+                    border: 2px solid #eee;
+                    box-shadow: 0px 4px 10px rgba(0,0,0,0.03);
+                    min-height: 300px;
+                ">
+                    <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
+                        <h1 style="margin: 0; color: {color}; font-size: 52px; font-weight: bold; letter-spacing: -2px;">{rate:+.2f}%</h1>
+                        <p style="margin: 10px 0 0 0; color: #444; font-size: 20px; font-weight: 600;">현재: {price:,.2f}</p>
+                    </div>
+                    <div style="border-top: 1px solid #e0e0e0; padding-top: 15px; margin-top: 10px;">
+                        <p style="margin: 0; font-size: 14px; color: #777; font-weight: 500;">
+                            52주 고점: <span style="color: #333;">{high_val:,.2f}</span>
+                        </p>
+                        <p style="margin: 2px 0 0 0; font-size: 11px; color: #aaa;">({high_date} 달성)</p>
+                    </div>
                 </div>
             """, unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # --- 구역 2: 심리 지표 ---
+    # --- 구역 2: 심리 지표 (상단과 동일한 3열 배치로 넓이 통일) ---
     st.markdown("### 🕵️ 시장 심리 및 변동성")
-    fear_cols = st.columns(2)
+    fear_cols = st.columns(3) # 3열로 설정하여 카드 폭을 지수 카드와 맞춤
     
-    # VIX 카드 (가운데 정렬 및 숫자 강조)
+    # VIX 카드
     vix_val = get_vix_data()
     vix_color = "#FF0000" if vix_val >= 20 else "#0000FF"
     with fear_cols[0]:
-        st.markdown("<h2 style='text-align: center; font-size: 28px; font-weight: 800; color: #333;'>VIX (공포지수)</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='text-align: center; font-size: 26px; font-weight: 800; color: #333;'>VIX (공포지수)</h2>", unsafe_allow_html=True)
         st.markdown(f"""
-            <div style="{card_style}">
+            <div style="
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                background-color: #f8f9fa;
+                padding: 25px;
+                border-radius: 20px;
+                text-align: center;
+                border: 2px solid #eee;
+                box-shadow: 0px 4px 10px rgba(0,0,0,0.03);
+                min-height: 300px;
+            ">
                 <h1 style="margin: 0; color: {vix_color}; font-size: 65px; font-weight: bold;">{vix_val:.2f}</h1>
+                <p style="margin: 10px 0 0 0; color: #888; font-size: 15px;">시장 변동성 수치</p>
             </div>
         """, unsafe_allow_html=True)
 
-    # CNN 공탐지수 카드 (가운데 정렬)
+    # CNN Fear & Greed 카드
     cnn_score, cnn_rating = get_cnn_fear_greed()
     if cnn_score <= 45: cnn_color = "#FF0000"
     elif cnn_score <= 55: cnn_color = "#666666"
     else: cnn_color = "#008000"
     
     with fear_cols[1]:
-        st.markdown("<h2 style='text-align: center; font-size: 28px; font-weight: 800; color: #333;'>CNN Fear & Greed</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='text-align: center; font-size: 26px; font-weight: 800; color: #333;'>CNN Fear & Greed</h2>", unsafe_allow_html=True)
         st.markdown(f"""
-            <div style="{card_style}">
+            <div style="
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                background-color: #f8f9fa;
+                padding: 25px;
+                border-radius: 20px;
+                text-align: center;
+                border: 2px solid #eee;
+                box-shadow: 0px 4px 10px rgba(0,0,0,0.03);
+                min-height: 300px;
+            ">
                 <h1 style="margin: 0; color: {cnn_color}; font-size: 65px; font-weight: bold;">{cnn_score}</h1>
                 <p style="margin: 10px 0 0 0; font-size: 24px; color: {cnn_color}; font-weight: bold;">{cnn_rating}</p>
             </div>
         """, unsafe_allow_html=True)
+
+    # fear_cols[2]는 빈 칸으로 두어 전체적인 균형 유지
 
     st.write(f"⏱️ 마지막 업데이트: {current_time} (한국 시간)")
 
