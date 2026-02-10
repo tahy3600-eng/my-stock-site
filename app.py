@@ -55,7 +55,7 @@ def update_dashboard():
     now_kst = datetime.utcnow() + timedelta(hours=9)
     current_time = now_kst.strftime('%H:%M:%S')
 
-    # --- 구역 1: 3대 지수 (상단 3열) ---
+    # --- 구역 1: 3대 지수 ---
     st.markdown("### 🏦 주요 지수 (52주 고점 대비)")
     idx_cols = st.columns(3)
     indices = {"나스닥 100": "^NDX", "S&P 500": "^GSPC", "다우 존스": "^DJI"}
@@ -84,13 +84,11 @@ def update_dashboard():
 
     st.markdown("<br><hr><br>", unsafe_allow_html=True)
 
-    # --- 구역 2: 심리 지표 (하단 2열 역피라미드 배치) ---
+    # --- 구역 2: 심리 지표 (역피라미드) ---
     st.markdown("### 🕵️ 시장 심리 및 변동성")
-    
-    # [0.5, 1, 1, 0.5] 비율로 양옆에 공백을 두어 가운데로 모음
     fear_cols = st.columns([0.5, 1, 1, 0.5])
     
-    # VIX 카드 (가운데 두 칸 중 왼쪽)
+    # VIX 카드 (설명 텍스트 삭제)
     vix_val = get_vix_data()
     vix_color = "#FF0000" if vix_val >= 20 else "#0000FF"
     with fear_cols[1]:
@@ -101,12 +99,11 @@ def update_dashboard():
                 background-color: #f8f9fa; padding: 25px; border-radius: 20px;
                 text-align: center; border: 2px solid #eee; min-height: 250px;
             ">
-                <h1 style="margin: 0; color: {vix_color}; font-size: 60px; font-weight: bold;">{vix_val:.2f}</h1>
-                <p style="margin: 15px 0 0 0; font-size: 14px; color: #999;">변동성 수치 (20 이상 위험)</p>
+                <h1 style="margin: 0; color: {vix_color}; font-size: 65px; font-weight: bold;">{vix_val:.2f}</h1>
             </div>
         """, unsafe_allow_html=True)
 
-    # CNN 공탐지수 카드 (가운데 두 칸 중 오른쪽)
+    # CNN 공탐지수 카드
     cnn_score, cnn_rating = get_cnn_fear_greed()
     if cnn_score <= 45: cnn_color = "#FF0000"
     elif cnn_score <= 55: cnn_color = "#666666"
@@ -120,12 +117,17 @@ def update_dashboard():
                 background-color: #f8f9fa; padding: 25px; border-radius: 20px;
                 text-align: center; border: 2px solid #eee; min-height: 250px;
             ">
-                <h1 style="margin: 0; color: {cnn_color}; font-size: 60px; font-weight: bold;">{cnn_score}</h1>
-                <p style="margin: 15px 0 0 0; font-size: 18px; color: {cnn_color}; font-weight: bold;">상태: {cnn_rating}</p>
+                <h1 style="margin: 0; color: {cnn_color}; font-size: 65px; font-weight: bold;">{cnn_score}</h1>
+                <p style="margin: 15px 0 0 0; font-size: 20px; color: {cnn_color}; font-weight: bold;">{cnn_rating}</p>
             </div>
         """, unsafe_allow_html=True)
 
-    st.write(f"⏱️ 마지막 업데이트: {current_time} (한국 시간)")
+    # 마지막 업데이트 우측 정렬
+    st.markdown(f"""
+        <div style="text-align: right; margin-top: 30px; color: #999; font-size: 14px;">
+            ⏱️ 마지막 업데이트: {current_time} (한국 시간)
+        </div>
+    """, unsafe_allow_html=True)
 
 # 실행
 update_dashboard()
