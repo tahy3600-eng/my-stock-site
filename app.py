@@ -67,11 +67,11 @@ def update_dashboard():
             st.markdown(f"<h2 style='text-align: center; font-size: 24px; font-weight: 800; color: #333;'>{name}</h2>", unsafe_allow_html=True)
             st.markdown(f"""
                 <div style="
-                    display: flex; flex-direction: column; justify-content: center; align-items: center;
+                    display: flex; flex-direction: column; justify-content: center;
                     background-color: #f8f9fa; padding: 25px; border-radius: 20px;
                     text-align: center; border: 2px solid #eee; min-height: 250px;
                 ">
-                    <h1 style="margin: 0; color: {color}; font-size: 52px; font-weight: bold; line-height: 1.2;">{rate:+.2f}%</h1>
+                    <h1 style="margin: 0; color: {color}; font-size: 52px; font-weight: bold;">{rate:+.2f}%</h1>
                     <p style="margin: 10px 0 0 0; color: #444; font-size: 20px; font-weight: 600;">현재: {price:,.2f}</p>
                 </div>
             """, unsafe_allow_html=True)
@@ -95,15 +95,15 @@ def update_dashboard():
         st.markdown("<h2 style='text-align: center; font-size: 24px; font-weight: 800; color: #333;'>VIX (공포지수)</h2>", unsafe_allow_html=True)
         st.markdown(f"""
             <div style="
-                display: flex; flex-direction: column; justify-content: center; align-items: center;
+                display: flex; flex-direction: column; justify-content: center;
                 background-color: #f8f9fa; padding: 25px; border-radius: 20px;
                 text-align: center; border: 2px solid #eee; min-height: 250px;
             ">
-                <h1 style="margin: 0; color: {vix_color}; font-size: 65px; font-weight: bold; line-height: 1.1;">{vix_val:.2f}</h1>
+                <h1 style="margin: 0; color: {vix_color}; font-size: 65px; font-weight: bold;">{vix_val:.2f}</h1>
             </div>
         """, unsafe_allow_html=True)
 
-    # CNN 공탐지수 카드 (중앙 정렬 강화)
+    # CNN 공탐지수 카드 (정렬 수정)
     cnn_score, cnn_rating = get_cnn_fear_greed()
     if cnn_score <= 45: cnn_color = "#FF0000"
     elif cnn_score <= 55: cnn_color = "#666666"
@@ -113,16 +113,18 @@ def update_dashboard():
         st.markdown("<h2 style='text-align: center; font-size: 24px; font-weight: 800; color: #333;'>CNN Fear & Greed</h2>", unsafe_allow_html=True)
         st.markdown(f"""
             <div style="
-                display: flex; flex-direction: column; justify-content: center; align-items: center;
+                display: flex; flex-direction: column; justify-content: center;
                 background-color: #f8f9fa; padding: 25px; border-radius: 20px;
                 text-align: center; border: 2px solid #eee; min-height: 250px;
             ">
-                <h1 style="margin: 0; color: {cnn_color}; font-size: 65px; font-weight: bold; line-height: 1.1;">{cnn_score}</h1>
-                <p style="margin: 5px 0 0 0; font-size: 22px; color: {cnn_color}; font-weight: bold; line-height: 1.2;">{cnn_rating}</p>
+                <div style="margin: auto 0;">
+                    <h1 style="margin: 0; color: {cnn_color}; font-size: 65px; font-weight: bold; line-height: 1;">{cnn_score}</h1>
+                    <p style="margin: 10px 0 0 0; font-size: 22px; color: {cnn_color}; font-weight: bold; line-height: 1;">{cnn_rating}</p>
+                </div>
             </div>
         """, unsafe_allow_html=True)
 
-    # 마지막 업데이트 및 출처 우측 정렬
+    # 마지막 업데이트 및 데이터 출처 우측 정렬
     st.markdown(f"""
         <div style="text-align: right; margin-top: 30px; color: #999; font-size: 14px;">
             ⏱️ 마지막 업데이트: {current_time} (한국 시간)<br>
