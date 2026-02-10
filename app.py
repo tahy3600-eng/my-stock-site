@@ -36,15 +36,12 @@ def get_vix_data():
 
 def get_cnn_fear_greed():
     url = "https://www.cnn.com/markets/fear-and-greed"
-    headers = {
-        "User-Agent": "Mozilla/5.0"
-    }
+    headers = {"User-Agent": "Mozilla/5.0"}
     try:
         r = requests.get(url, headers=headers, timeout=10)
         if r.status_code == 200:
             score_match = re.search(r'"score":(\d+)', r.text)
-            score = int(score_match.group(1)) if score_match else 48
-            return score
+            return int(score_match.group(1)) if score_match else 48
         return 48
     except:
         return 48
@@ -52,15 +49,16 @@ def get_cnn_fear_greed():
 # 3. 메인 타이틀
 st.title("📈 미국 증시 및 시장 심리 실시간 현황")
 
-# 4. 실시간 업데이트 영역
+# 4. 실시간 업데이트
 @st.fragment(run_every="10s")
 def update_dashboard():
     now_kst = datetime.utcnow() + timedelta(hours=9)
     current_time = now_kst.strftime('%H:%M:%S')
 
-    # --- 구역 1: 3대 지수 ---
+    # --- 구역 1: 주요 지수 ---
     st.markdown("### 🏦 주요 지수 (52주 고점 대비)")
     idx_cols = st.columns(3)
+
     indices = {
         "나스닥 100": "^NDX",
         "S&P 500": "^GSPC",
@@ -76,19 +74,25 @@ def update_dashboard():
                 f"<h2 style='text-align:center; font-size:24px; font-weight:800;'>{name}</h2>",
                 unsafe_allow_html=True
             )
+
             st.markdown(f"""
                 <div style="
                     background-color:#f8f9fa;
                     padding:25px;
                     border-radius:20px;
-                    text-align:center;
                     border:2px solid #eee;
                     min-height:250px;
+
+                    display:flex;
+                    flex-direction:column;
+                    justify-content:center;
+                    align-items:center;
+                    text-align:center;
                 ">
-                    <h1 style="color:{color}; font-size:52px; font-weight:bold;">
+                    <h1 style="color:{color}; font-size:52px; font-weight:bold; margin:0;">
                         {rate:+.2f}%
                     </h1>
-                    <p style="font-size:20px; font-weight:600;">
+                    <p style="font-size:20px; font-weight:600; margin-top:10px;">
                         현재: {price:,.2f}
                     </p>
                 </div>
@@ -105,7 +109,7 @@ def update_dashboard():
 
     st.markdown("<br><hr><br>", unsafe_allow_html=True)
 
-    # --- 구역 2: 심리 지표 ---
+    # --- 구역 2: 시장 심리 ---
     st.markdown("### 🕵️ 시장 심리 및 변동성")
     fear_cols = st.columns([0.5, 1, 1, 0.5])
 
@@ -120,24 +124,23 @@ def update_dashboard():
                 background-color:#f8f9fa;
                 padding:25px;
                 border-radius:20px;
-                text-align:center;
                 border:2px solid #eee;
                 min-height:250px;
+
+                display:flex;
+                justify-content:center;
+                align-items:center;
+                text-align:center;
             ">
-                <h1 style="color:{vix_color}; font-size:65px; font-weight:bold;">
+                <h1 style="color:{vix_color}; font-size:65px; font-weight:bold; margin:0;">
                     {vix_val:.2f}
                 </h1>
             </div>
         """, unsafe_allow_html=True)
 
-    # CNN Fear & Greed (숫자만 표시)
+    # CNN Fear & Greed
     cnn_score = get_cnn_fear_greed()
-    if cnn_score <= 45:
-        cnn_color = "#FF0000"
-    elif cnn_score <= 55:
-        cnn_color = "#666666"
-    else:
-        cnn_color = "#008000"
+    cnn_color = "#FF0000" if cnn_score <= 45 else "#666666" if cnn_score <= 55 else "#008000"
 
     with fear_cols[2]:
         st.markdown("<h2 style='text-align:center;'>CNN Fear & Greed</h2>", unsafe_allow_html=True)
@@ -146,11 +149,15 @@ def update_dashboard():
                 background-color:#f8f9fa;
                 padding:25px;
                 border-radius:20px;
-                text-align:center;
                 border:2px solid #eee;
                 min-height:250px;
+
+                display:flex;
+                justify-content:center;
+                align-items:center;
+                text-align:center;
             ">
-                <h1 style="color:{cnn_color}; font-size:65px; font-weight:bold;">
+                <h1 style="color:{cnn_color}; font-size:65px; font-weight:bold; margin:0;">
                     {cnn_score}
                 </h1>
             </div>
