@@ -118,7 +118,6 @@ def update_dashboard():
                 text-align: center; border: 2px solid #eee; min-height: 250px;
             ">
                 <h1 style="margin: 0; color: {cnn_color}; font-size: 65px; font-weight: bold;">{cnn_score}</h1>
-                <p style="margin: 15px 0 0 0; font-size: 20px; color: {cnn_color}; font-weight: bold;">{cnn_rating}</p>
             </div>
         """, unsafe_allow_html=True)
 
@@ -134,3 +133,4 @@ update_dashboard()
 
 st.divider()
 st.caption("※ 데이터 출처: Yahoo Finance & CNN Business")
+
