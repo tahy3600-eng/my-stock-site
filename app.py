@@ -88,7 +88,7 @@ def update_dashboard():
     st.markdown("### 🕵️ 시장 심리 및 변동성")
     fear_cols = st.columns([0.5, 1, 1, 0.5])
     
-    # VIX 카드
+    # VIX 카드 (설명 텍스트 삭제)
     vix_val = get_vix_data()
     vix_color = "#FF0000" if vix_val >= 20 else "#0000FF"
     with fear_cols[1]:
@@ -103,7 +103,7 @@ def update_dashboard():
             </div>
         """, unsafe_allow_html=True)
 
-    # CNN 공탐지수 카드 (정렬 수정)
+    # CNN 공탐지수 카드
     cnn_score, cnn_rating = get_cnn_fear_greed()
     if cnn_score <= 45: cnn_color = "#FF0000"
     elif cnn_score <= 55: cnn_color = "#666666"
@@ -117,20 +117,20 @@ def update_dashboard():
                 background-color: #f8f9fa; padding: 25px; border-radius: 20px;
                 text-align: center; border: 2px solid #eee; min-height: 250px;
             ">
-                <div style="margin: auto 0;">
-                    <h1 style="margin: 0; color: {cnn_color}; font-size: 65px; font-weight: bold; line-height: 1;">{cnn_score}</h1>
-                    <p style="margin: 10px 0 0 0; font-size: 22px; color: {cnn_color}; font-weight: bold; line-height: 1;">{cnn_rating}</p>
-                </div>
+                <h1 style="margin: 0; color: {cnn_color}; font-size: 65px; font-weight: bold;">{cnn_score}</h1>
+                <p style="margin: 15px 0 0 0; font-size: 20px; color: {cnn_color}; font-weight: bold;">{cnn_rating}</p>
             </div>
         """, unsafe_allow_html=True)
 
-    # 마지막 업데이트 및 데이터 출처 우측 정렬
+    # 마지막 업데이트 우측 정렬
     st.markdown(f"""
         <div style="text-align: right; margin-top: 30px; color: #999; font-size: 14px;">
-            ⏱️ 마지막 업데이트: {current_time} (한국 시간)<br>
-            <span style="font-size: 12px;">※ 데이터 출처: Yahoo Finance & CNN Business</span>
+            ⏱️ 마지막 업데이트: {current_time} (한국 시간)
         </div>
     """, unsafe_allow_html=True)
 
 # 실행
 update_dashboard()
+
+st.divider()
+st.caption("※ 데이터 출처: Yahoo Finance & CNN Business")
