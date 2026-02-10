@@ -3,7 +3,7 @@ import yfinance as yf
 
 # 1. [SEO 보강] 페이지 설정 (검색 엔진에 노출될 정보)
 st.set_page_config(
-    page_title="미국 증시 전고점 추적기 | 52주 신고가 등락률 실시간 확인", # 검색창에 뜨는 제목
+    page_title="미국 증시 전고점 실시간 | 52주 신고가 등락률 실시간 확인", # 검색창에 뜨는 제목
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -75,3 +75,4 @@ for i, (name, symbol) in enumerate(indices.items()):
 
 st.divider()
 st.caption("※ 모든 데이터는 Yahoo Finance 실시간 시세를 기준으로 하며 52주 데이터를 활용합니다.")
+
