@@ -68,7 +68,7 @@ def update_dashboard():
                     <b>전고점:</b> {high_val:,.2f}
                 </p>
                 <p style="margin: 0; font-size: 14px; color: #999;">
-                    (달성일: {high_date})
+                    (기준일: {high_date})
                 </p>
             </div>
             """
@@ -81,3 +81,4 @@ update_dashboard()
 
 st.divider()
 st.caption("※ 본 지표는 **Yahoo Finance 실시간 시세**를 바탕으로 하며, **최근 52주 신고가(고점)** 대비 현재 위치를 산출한 결과입니다.")
+
