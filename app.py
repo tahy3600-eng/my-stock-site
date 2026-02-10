@@ -55,7 +55,7 @@ def update_dashboard():
     now_kst = datetime.utcnow() + timedelta(hours=9)
     current_time = now_kst.strftime('%H:%M:%S')
 
-    # --- 구역 1: 3대 지수 ---
+    # --- 구역 1: 3대 지수 (상단 3열) ---
     st.markdown("### 🏦 주요 지수 (52주 고점 대비)")
     idx_cols = st.columns(3)
     indices = {"나스닥 100": "^NDX", "S&P 500": "^GSPC", "다우 존스": "^DJI"}
@@ -84,17 +84,16 @@ def update_dashboard():
 
     st.markdown("<br><hr><br>", unsafe_allow_html=True)
 
-    # --- 구역 2: 심리 지표 (가운데 정렬) ---
+    # --- 구역 2: 심리 지표 (하단 2열 역피라미드 배치) ---
     st.markdown("### 🕵️ 시장 심리 및 변동성")
     
-    # 3열을 만들되, 양옆을 비우고 가운데 2개 카드를 배치하기 위해 columns 조절
-    # [1, 1, 1] 비율로 생성하여 가운데 위주로 배치
-    fear_cols = st.columns([1, 1, 1])
+    # [0.5, 1, 1, 0.5] 비율로 양옆에 공백을 두어 가운데로 모음
+    fear_cols = st.columns([0.5, 1, 1, 0.5])
     
-    # VIX 카드 (가운데 열의 첫 번째)
+    # VIX 카드 (가운데 두 칸 중 왼쪽)
     vix_val = get_vix_data()
     vix_color = "#FF0000" if vix_val >= 20 else "#0000FF"
-    with fear_cols[0]:
+    with fear_cols[1]:
         st.markdown("<h2 style='text-align: center; font-size: 24px; font-weight: 800; color: #333;'>VIX (공포지수)</h2>", unsafe_allow_html=True)
         st.markdown(f"""
             <div style="
@@ -107,13 +106,13 @@ def update_dashboard():
             </div>
         """, unsafe_allow_html=True)
 
-    # CNN 공탐지수 카드 (가운데 열의 두 번째)
+    # CNN 공탐지수 카드 (가운데 두 칸 중 오른쪽)
     cnn_score, cnn_rating = get_cnn_fear_greed()
     if cnn_score <= 45: cnn_color = "#FF0000"
     elif cnn_score <= 55: cnn_color = "#666666"
     else: cnn_color = "#008000"
     
-    with fear_cols[1]:
+    with fear_cols[2]:
         st.markdown("<h2 style='text-align: center; font-size: 24px; font-weight: 800; color: #333;'>CNN Fear & Greed</h2>", unsafe_allow_html=True)
         st.markdown(f"""
             <div style="
