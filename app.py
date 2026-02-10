@@ -55,7 +55,7 @@ def update_dashboard():
     now_kst = datetime.utcnow() + timedelta(hours=9)
     current_time = now_kst.strftime('%H:%M:%S')
 
-    # --- 구역 1: 3대 지수 (전통적 빨강/파랑) ---
+    # --- 구역 1: 3대 지수 ---
     st.markdown("### 🏦 주요 지수 (52주 고점 대비)")
     idx_cols = st.columns(3)
     indices = {"나스닥 100": "^NDX", "S&P 500": "^GSPC", "다우 존스": "^DJI"}
@@ -64,10 +64,10 @@ def update_dashboard():
         price, high_val, rate, high_date = get_market_data(symbol)
         color = "#FF0000" if rate >= 0 else "#0000FF"
         with idx_cols[i]:
-            st.markdown(f"<h2 style='text-align: center; font-size: 28px; font-weight: 800;'>{name}</h2>", unsafe_allow_html=True)
+            st.markdown(f"<h2 style='text-align: center; font-size: 28px; font-weight: 800; color: #333;'>{name}</h2>", unsafe_allow_html=True)
             st.markdown(f"""
-                <div style="background-color: #f8f9fa; padding: 25px; border-radius: 20px; text-align: center; border: 2px solid #eee;">
-                    <h1 style="margin: 0; color: {color}; font-size: 55px;">{rate:+.2f}%</h1>
+                <div style="background-color: #f8f9fa; padding: 25px; border-radius: 20px; text-align: center; border: 2px solid #eee; box-shadow: 0px 4px 10px rgba(0,0,0,0.03);">
+                    <h1 style="margin: 0; color: {color}; font-size: 55px; font-weight: bold;">{rate:+.2f}%</h1>
                     <p style="margin: 5px 0; color: #555; font-size: 18px;">현재: {price:,.2f}</p>
                     <p style="margin: 0; font-size: 13px; color: #999;">고점: {high_val:,.2f}</p>
                 </div>
@@ -75,34 +75,33 @@ def update_dashboard():
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # --- 구역 2: 심리 지표 (조건부 색상 적용) ---
+    # --- 구역 2: 심리 지표 (디자인 통일 버전) ---
     st.markdown("### 🕵️ 시장 심리 및 변동성")
     fear_cols = st.columns(2)
     
-    # VIX 카드 색상 로직
+    # VIX 카드
     vix_val = get_vix_data()
-    vix_color = "#FF0000" if vix_val >= 20 else "#0000FF" # 20 이상이면 위험(빨강)
-    
+    vix_color = "#FF0000" if vix_val >= 20 else "#0000FF"
     with fear_cols[0]:
-        st.markdown("<h2 style='text-align: center; font-size: 28px; font-weight: 800;'>VIX (공포지수)</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='text-align: center; font-size: 28px; font-weight: 800; color: #333;'>VIX (공포지수)</h2>", unsafe_allow_html=True)
         st.markdown(f"""
-            <div style="background-color: #ffffff; padding: 25px; border-radius: 20px; text-align: center; border: 3px solid {vix_color};">
-                <h1 style="margin: 0; color: {vix_color}; font-size: 60px;">{vix_val:.2f}</h1>
+            <div style="background-color: #f8f9fa; padding: 25px; border-radius: 20px; text-align: center; border: 2px solid #eee; box-shadow: 0px 4px 10px rgba(0,0,0,0.03);">
+                <h1 style="margin: 0; color: {vix_color}; font-size: 60px; font-weight: bold;">{vix_val:.2f}</h1>
                 <p style="margin: 5px 0; color: #666; font-size: 16px;">20 이상 위험 / 20 미만 안정</p>
             </div>
         """, unsafe_allow_html=True)
 
-    # CNN 공탐지수 색상 로직
+    # CNN 공탐지수 카드
     cnn_score, cnn_rating = get_cnn_fear_greed()
-    if cnn_score <= 45: cnn_color = "#FF0000"     # Fear (빨강)
-    elif cnn_score <= 55: cnn_color = "#666666"   # Neutral (회색)
-    else: cnn_color = "#008000"                  # Greed (초록)
+    if cnn_score <= 45: cnn_color = "#FF0000"
+    elif cnn_score <= 55: cnn_color = "#666666"
+    else: cnn_color = "#008000"
     
     with fear_cols[1]:
-        st.markdown("<h2 style='text-align: center; font-size: 28px; font-weight: 800;'>CNN Fear & Greed</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='text-align: center; font-size: 28px; font-weight: 800; color: #333;'>CNN Fear & Greed</h2>", unsafe_allow_html=True)
         st.markdown(f"""
-            <div style="background-color: #ffffff; padding: 25px; border-radius: 20px; text-align: center; border: 3px solid {cnn_color};">
-                <h1 style="margin: 0; color: {cnn_color}; font-size: 60px;">{cnn_score}</h1>
+            <div style="background-color: #f8f9fa; padding: 25px; border-radius: 20px; text-align: center; border: 2px solid #eee; box-shadow: 0px 4px 10px rgba(0,0,0,0.03);">
+                <h1 style="margin: 0; color: {cnn_color}; font-size: 60px; font-weight: bold;">{cnn_score}</h1>
                 <p style="margin: 5px 0; font-size: 20px; color: {cnn_color}; font-weight: bold;">{cnn_rating}</p>
             </div>
         """, unsafe_allow_html=True)
