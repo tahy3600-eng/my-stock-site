@@ -26,7 +26,7 @@ def get_market_data(symbol):
 
 # 3. 메인 제목
 st.title("📈 주요 지수 전고점 대비 등락")
-st.write("지난 1년(52주)의 최고치인 **'전고점'** 대비 현재 위치를 10초마다 분석합니다.")
+st.write("최근 52주 고점 대비 현재 지수의 위치를 10초마다 실시간으로 업데이트합니다.")
 
 # 4. 실시간 업데이트 영역
 @st.fragment(run_every="10s")
@@ -44,19 +44,19 @@ def update_dashboard():
         color = "#FF0000" if rate >= 0 else "#0000FF"
         
         with cols[i]:
-            # 안전한 출력을 위해 HTML 문자열을 변수에 담아 실행
+            # [수정] 지수 이름을 카드 밖 상단에 배치
+            st.markdown(f"<h2 style='text-align: center; font-size: 34px; font-weight: 800; margin-bottom: 10px; color: #333;'>{name}</h2>", unsafe_allow_html=True)
+            
+            # 카드 내부 디자인 (이름 제외)
             html_content = f"""
             <div style="
                 background-color: #f8f9fa; 
-                padding: 35px 20px; 
+                padding: 30px 20px; 
                 border-radius: 20px; 
                 text-align: center;
                 border: 2px solid #eee;
                 box-shadow: 0px 4px 12px rgba(0,0,0,0.05);
             ">
-                <h2 style="margin: 0 0 15px 0; font-size: 36px; color: #222; font-weight: 800;">
-                    {name}
-                </h2>
                 <h1 style="margin: 0; color: {color}; font-size: 68px; font-weight: bold; letter-spacing: -2px;">
                     {rate:+.2f}%
                 </h1>
