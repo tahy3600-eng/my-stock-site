@@ -50,30 +50,7 @@ for i, (name, symbol) in enumerate(indices.items()):
     price, high_val, rate, high_date = get_market_data(symbol)
     
     with cols[i]:
-        # 1. 지수 이름을 카드 밖(위쪽) 중앙에 배치
-        st.markdown(f"<h3 style='text-align: center; color: #333; margin-bottom: 15px;'>{name}</h3>", unsafe_allow_html=True)
-        
-        # 한국식 색상 (상승:빨강, 하락:파랑)
-        color = "#FF0000" if rate >= 0 else "#0000FF"
-        
-        # 2. 카드 디자인 (내부에서 이름 제거 및 P 제거 유지)
+        # 1. 지수 이름 크기를 50px로 확대 (퍼센트 크기와 동일)
         st.markdown(f"""
-            <div style="
-                background-color: #f8f9fa; 
-                padding: 25px; 
-                border-radius: 15px; 
-                text-align: center;
-                border: 2px solid #eee;
-            ">
-                <p style="margin: 0; font-size: 16px; color: #666;">현재가: {price:,.2f}</p>
-                <h1 style="margin: 10px 0; color: {color}; font-size: 50px; font-weight: bold;">
-                    {rate:+.2f}%
-                </h1>
-                <hr style="border: 0.5px solid #ddd;">
-                <p style="margin: 5px 0; font-size: 18px; color: #333;"><b>전고점:</b> {high_val:,.2f}</p>
-                <p style="margin: 0; font-size: 13px; color: #888;">(달성일: {high_date})</p>
-            </div>
-        """, unsafe_allow_html=True)
-
-st.divider()
-st.caption("※ 모든 데이터는 Yahoo Finance 실시간 시세를 바탕으로 하며, 최근 52주 신고가(고점) 대비 현재 위치를 산출한 결과입니다.")
+            <h1 style='
+                text-
