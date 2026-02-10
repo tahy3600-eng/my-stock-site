@@ -1,15 +1,15 @@
 import streamlit as st
 import yfinance as yf
 
-# 1. [SEO 보강] 페이지 설정 (검색 엔진에 노출될 정보)
+# 1. [SEO 보강] 페이지 설정
 st.set_page_config(
-    page_title="미국 증시 전고점 실시간 | 52주 신고가 등락률 실시간 확인", # 검색창에 뜨는 제목
+    page_title="미국 증시 전고점 실시간 | 52주 신고가 등락률 실시간 확인",
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# [SEO 보강] 검색 로봇을 위한 보이지 않는 설명 (메타 설명 대신 상단 배치)
+# [SEO 보강] 검색 로봇을 위한 보이지 않는 설명
 st.markdown("""
     <p style="display:none;">나스닥, S&P500, 다우존스 지수의 52주 신고가 대비 현재 하락률과 전고점 달성일을 실시간으로 제공하는 대시보드입니다.</p>
 """, unsafe_allow_html=True)
@@ -50,11 +50,10 @@ for i, (name, symbol) in enumerate(indices.items()):
     price, high_val, rate, high_date = get_market_data(symbol)
     
     with cols[i]:
-        st.subheader(name)
-        
         # 한국식 색상 (상승:빨강, 하락:파랑)
         color = "#FF0000" if rate >= 0 else "#0000FF"
         
+        # 카드 디자인 수정: 이름을 div 안으로 넣고 'P' 제거
         st.markdown(f"""
             <div style="
                 background-color: #f8f9fa; 
@@ -63,18 +62,16 @@ for i, (name, symbol) in enumerate(indices.items()):
                 text-align: center;
                 border: 2px solid #eee;
             ">
-                <p style="margin: 0; font-size: 16px; color: #666;">현재가: {price:,.2f} P</p>
+                <h3 style="margin: 0 0 15px 0; color: #333; font-size: 24px;">{name}</h3>
+                <p style="margin: 0; font-size: 16px; color: #666;">현재가: {price:,.2f}</p>
                 <h1 style="margin: 10px 0; color: {color}; font-size: 50px; font-weight: bold;">
                     {rate:+.2f}%
                 </h1>
                 <hr style="border: 0.5px solid #ddd;">
-                <p style="margin: 5px 0; font-size: 18px; color: #333;"><b>전고점:</b> {high_val:,.2f} P</p>
+                <p style="margin: 5px 0; font-size: 18px; color: #333;"><b>전고점:</b> {high_val:,.2f}</p>
                 <p style="margin: 0; font-size: 13px; color: #888;">(달성일: {high_date})</p>
             </div>
         """, unsafe_allow_html=True)
 
 st.divider()
 st.caption("※ 모든 데이터는 Yahoo Finance 실시간 시세를 바탕으로 하며, 최근 52주 신고가(고점) 대비 현재 위치를 산출한 결과입니다.")
-
-
-
