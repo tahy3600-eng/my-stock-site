@@ -103,7 +103,7 @@ def update_dashboard():
             </div>
         """, unsafe_allow_html=True)
 
-    # CNN 공탐지수 카드 (중앙 정렬 강화)
+    # CNN 공탐지수 카드 (텍스트 왼쪽 이동 수정)
     cnn_score, cnn_rating = get_cnn_fear_greed()
     if cnn_score <= 45: cnn_color = "#FF0000"
     elif cnn_score <= 55: cnn_color = "#666666"
@@ -118,17 +118,8 @@ def update_dashboard():
                 text-align: center; border: 2px solid #eee; min-height: 250px;
             ">
                 <h1 style="margin: 0; color: {cnn_color}; font-size: 65px; font-weight: bold; line-height: 1.1;">{cnn_score}</h1>
-                <p style="margin: 5px 0 0 0; font-size: 22px; color: {cnn_color}; font-weight: bold; line-height: 1.2;">{cnn_rating}</p>
+                <p style="margin: 5px 0 0 -8px; font-size: 22px; color: {cnn_color}; font-weight: bold; line-height: 1.2;">{cnn_rating}</p>
             </div>
         """, unsafe_allow_html=True)
 
     # 마지막 업데이트 및 출처 우측 정렬
-    st.markdown(f"""
-        <div style="text-align: right; margin-top: 30px; color: #999; font-size: 14px;">
-            ⏱️ 마지막 업데이트: {current_time} (한국 시간)<br>
-            <span style="font-size: 12px;">※ 데이터 출처: Yahoo Finance & CNN Business</span>
-        </div>
-    """, unsafe_allow_html=True)
-
-# 실행
-update_dashboard()
