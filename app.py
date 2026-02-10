@@ -2,7 +2,7 @@ import streamlit as st
 import yfinance as yf
 
 # 1. 페이지 설정
-st.set_page_config(page_title="증시 전고점 현황", layout="wide")
+st.set_page_config(page_title="증시 전고점 실시간", layout="wide")
 
 st.title("📈 주요 지수 전고점 대비 등락")
 st.write("최근 52주(1년) 신고가를 '전고점' 기준으로 하여 현재 위치를 표시합니다.")
@@ -68,4 +68,5 @@ for i, (name, symbol) in enumerate(indices.items()):
 
 st.divider()
 st.caption("※ 모든 수치는 최근 52주 데이터를 기준으로 계산되었습니다.")
+
 
