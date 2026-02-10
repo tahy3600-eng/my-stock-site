@@ -50,10 +50,13 @@ for i, (name, symbol) in enumerate(indices.items()):
     price, high_val, rate, high_date = get_market_data(symbol)
     
     with cols[i]:
+        # 1. 지수 이름을 카드 밖(위쪽) 중앙에 배치
+        st.markdown(f"<h3 style='text-align: center; color: #333; margin-bottom: 15px;'>{name}</h3>", unsafe_allow_html=True)
+        
         # 한국식 색상 (상승:빨강, 하락:파랑)
         color = "#FF0000" if rate >= 0 else "#0000FF"
         
-        # 카드 디자인 수정: 이름을 div 안으로 넣고 'P' 제거
+        # 2. 카드 디자인 (내부에서 이름 제거 및 P 제거 유지)
         st.markdown(f"""
             <div style="
                 background-color: #f8f9fa; 
@@ -62,7 +65,6 @@ for i, (name, symbol) in enumerate(indices.items()):
                 text-align: center;
                 border: 2px solid #eee;
             ">
-                <h3 style="margin: 0 0 15px 0; color: #333; font-size: 24px;">{name}</h3>
                 <p style="margin: 0; font-size: 16px; color: #666;">현재가: {price:,.2f}</p>
                 <h1 style="margin: 10px 0; color: {color}; font-size: 50px; font-weight: bold;">
                     {rate:+.2f}%
