@@ -11,7 +11,7 @@ st.set_page_config(
 
 # 제목 및 설명
 st.title("📈 주요 지수 전고점 대비 등락")
-st.write("지난 1년(52주)의 최고치인 **'전고점'** 대비 현재 지수의 위치를 실시간으로 분석합니다.")
+st.write("지난 1년(52주)의 최고치인 **전고점** 대비 현재 지수의 위치를 실시간으로 분석합니다.")
 
 # 2. 데이터 가져오기 함수
 @st.cache_data(ttl=60)
@@ -75,3 +75,4 @@ for i, (name, symbol) in enumerate(indices.items()):
 
 st.divider()
 st.caption("※ 모든 데이터는 Yahoo Finance 실시간 시세를 바탕으로 하며, 최근 52주 신고가(고점) 대비 현재 위치를 산출한 결과입니다.")
+
