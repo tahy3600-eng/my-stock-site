@@ -78,7 +78,7 @@ def update_dashboard():
             st.markdown(f"""
                 <p style="text-align: center; margin-top: 10px; font-size: 14px; color: #666;">
                     52주 고점: <b>{high_val:,.2f}</b><br>
-                    <span style="color: #aaa; font-size: 12px;">({high_date} 달성)</span>
+                    <span style="color: #aaa; font-size: 12px;">({high_date})</span>
                 </p>
             """, unsafe_allow_html=True)
 
@@ -133,4 +133,5 @@ update_dashboard()
 
 st.divider()
 st.caption("※ 데이터 출처: Yahoo Finance & CNN Business")
+
 
