@@ -46,10 +46,25 @@ def get_cnn_fear_greed():
         return 48, "Neutral"
     except: return 48, "Neutral"
 
-# 3. 메인 제목
+# 3. 공통 카드 스타일 설정 (중앙 정렬 및 크기 통일)
+card_style = """
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: #f8f9fa;
+    padding: 30px 20px;
+    border-radius: 20px;
+    text-align: center;
+    border: 2px solid #eee;
+    box-shadow: 0px 4px 10px rgba(0,0,0,0.03);
+    min-height: 280px;
+"""
+
+# 4. 메인 제목
 st.title("📈 미국 증시 및 시장 심리 실시간 현황")
 
-# 4. 업데이트 영역 (10초 주기)
+# 5. 업데이트 영역 (10초 주기)
 @st.fragment(run_every="10s")
 def update_dashboard():
     now_kst = datetime.utcnow() + timedelta(hours=9)
@@ -66,32 +81,34 @@ def update_dashboard():
         with idx_cols[i]:
             st.markdown(f"<h2 style='text-align: center; font-size: 28px; font-weight: 800; color: #333;'>{name}</h2>", unsafe_allow_html=True)
             st.markdown(f"""
-                <div style="background-color: #f8f9fa; padding: 25px; border-radius: 20px; text-align: center; border: 2px solid #eee; box-shadow: 0px 4px 10px rgba(0,0,0,0.03);">
+                <div style="{card_style}">
                     <h1 style="margin: 0; color: {color}; font-size: 55px; font-weight: bold;">{rate:+.2f}%</h1>
-                    <p style="margin: 5px 0; color: #555; font-size: 18px;">현재: {price:,.2f}</p>
-                    <p style="margin: 0; font-size: 13px; color: #999;">고점: {high_val:,.2f}</p>
+                    <p style="margin: 10px 0; color: #555; font-size: 20px; font-weight: 600;">현재: {price:,.2f}</p>
+                    <p style="margin: 0; font-size: 14px; color: #888; font-weight: 500;">
+                        고점: {high_val:,.2f} <br>
+                        <span style="font-size: 12px; color: #aaa;">({high_date})</span>
+                    </p>
                 </div>
             """, unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # --- 구역 2: 심리 지표 (디자인 통일 버전) ---
+    # --- 구역 2: 심리 지표 ---
     st.markdown("### 🕵️ 시장 심리 및 변동성")
     fear_cols = st.columns(2)
     
-    # VIX 카드
+    # VIX 카드 (가운데 정렬 및 숫자 강조)
     vix_val = get_vix_data()
     vix_color = "#FF0000" if vix_val >= 20 else "#0000FF"
     with fear_cols[0]:
         st.markdown("<h2 style='text-align: center; font-size: 28px; font-weight: 800; color: #333;'>VIX (공포지수)</h2>", unsafe_allow_html=True)
         st.markdown(f"""
-            <div style="background-color: #f8f9fa; padding: 25px; border-radius: 20px; text-align: center; border: 2px solid #eee; box-shadow: 0px 4px 10px rgba(0,0,0,0.03);">
-                <h1 style="margin: 0; color: {vix_color}; font-size: 60px; font-weight: bold;">{vix_val:.2f}</h1>
-                <p style="margin: 5px 0; color: #666; font-size: 16px;">20 이상 위험 / 20 미만 안정</p>
+            <div style="{card_style}">
+                <h1 style="margin: 0; color: {vix_color}; font-size: 65px; font-weight: bold;">{vix_val:.2f}</h1>
             </div>
         """, unsafe_allow_html=True)
 
-    # CNN 공탐지수 카드
+    # CNN 공탐지수 카드 (가운데 정렬)
     cnn_score, cnn_rating = get_cnn_fear_greed()
     if cnn_score <= 45: cnn_color = "#FF0000"
     elif cnn_score <= 55: cnn_color = "#666666"
@@ -100,9 +117,9 @@ def update_dashboard():
     with fear_cols[1]:
         st.markdown("<h2 style='text-align: center; font-size: 28px; font-weight: 800; color: #333;'>CNN Fear & Greed</h2>", unsafe_allow_html=True)
         st.markdown(f"""
-            <div style="background-color: #f8f9fa; padding: 25px; border-radius: 20px; text-align: center; border: 2px solid #eee; box-shadow: 0px 4px 10px rgba(0,0,0,0.03);">
-                <h1 style="margin: 0; color: {cnn_color}; font-size: 60px; font-weight: bold;">{cnn_score}</h1>
-                <p style="margin: 5px 0; font-size: 20px; color: {cnn_color}; font-weight: bold;">{cnn_rating}</p>
+            <div style="{card_style}">
+                <h1 style="margin: 0; color: {cnn_color}; font-size: 65px; font-weight: bold;">{cnn_score}</h1>
+                <p style="margin: 10px 0 0 0; font-size: 24px; color: {cnn_color}; font-weight: bold;">{cnn_rating}</p>
             </div>
         """, unsafe_allow_html=True)
 
