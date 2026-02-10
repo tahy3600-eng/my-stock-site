@@ -1,92 +1,118 @@
 import streamlit as st
 import yfinance as yf
-from datetime import datetime, timedelta # 추가 설치 없이 기본 제공됨
+from datetime import datetime, timedelta
 import time
+import requests
 
-# 1. 페이지 설정 및 SEO
+# 1. 페이지 설정
 st.set_page_config(
-    page_title="미국 증시 전고점 실시간 추적기",
-    page_icon="📈",
+    page_title="미국 증시 & 공포 지수 대시보드",
+    page_icon="📊",
     layout="wide"
 )
 
-# 2. 데이터 가져오기 함수
+# 2. 데이터 수집 함수들
 def get_market_data(symbol):
     try:
         ticker = yf.Ticker(symbol)
         df = ticker.history(period="1y")
-        if df.empty:
-            return 0.0, 0.0, 0.0, "N/A"
-        
+        if df.empty: return 0.0, 0.0, 0.0, "N/A"
         high_val = df['High'].max()
         high_date = df['High'].idxmax().strftime('%Y-%m-%d')
         current = df['Close'].iloc[-1]
         rate = ((current - high_val) / high_val) * 100
-        
         return current, high_val, rate, high_date
-    except:
-        return 0.0, 0.0, 0.0, "오류"
+    except: return 0.0, 0.0, 0.0, "오류"
+
+def get_vix_data():
+    try:
+        vix = yf.Ticker("^VIX")
+        current = vix.history(period="1d")['Close'].iloc[-1]
+        return current
+    except: return 0.0
+
+def get_cnn_fear_greed():
+    try:
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        url = "https://production.dataviz.cnn.io/index/feargreed/graphdata"
+        r = requests.get(url, headers=headers, timeout=5)
+        data = r.json()
+        score = data['fear_and_greed']['score']
+        rating = data['fear_and_greed']['rating']
+        return score, rating
+    except: return 0, "연결 오류"
 
 # 3. 메인 제목
-st.title("📈 주요 지수 전고점 대비 등락")
-st.write("지난 1년(52주)의 최고치인 **'전고점'** 대비 현재 위치를 10초마다 실시간으로 분석합니다.")
+st.title("📊 미국 증시 및 시장 심리 실시간 현황")
+st.write("3대 지수의 전고점 대비 등락과 시장의 공포 수준을 10초마다 자동 갱신합니다.")
 
-# 4. 실시간 업데이트 영역 (10초 주기)
+# 4. 실시간 업데이트 영역
 @st.fragment(run_every="10s")
 def update_dashboard():
-    # [핵심] 라이브러리 설치 없이 한국 시간 계산 (표준시 + 9시간)
+    # 라이브러리 없이 한국 시간 계산
     now_kst = datetime.utcnow() + timedelta(hours=9)
     current_time = now_kst.strftime('%H:%M:%S')
-    
-    indices = {
-        "나스닥 100": "^NDX",
-        "S&P 500": "^GSPC",
-        "다우 존스": "^DJI"
-    }
-    
-    cols = st.columns(3)
+
+    # --- 상단: 3대 지수 영역 ---
+    st.markdown("### 🏦 주요 지수 (52주 고점 대비)")
+    idx_cols = st.columns(3)
+    indices = {"나스닥 100": "^NDX", "S&P 500": "^GSPC", "다우 존스": "^DJI"}
     
     for i, (name, symbol) in enumerate(indices.items()):
         price, high_val, rate, high_date = get_market_data(symbol)
         color = "#FF0000" if rate >= 0 else "#0000FF"
-        
-        with cols[i]:
-            # 지수 이름 상단 배치
-            st.markdown(f"<h2 style='text-align: center; font-size: 34px; font-weight: 800; margin-bottom: 10px; color: #333;'>{name}</h2>", unsafe_allow_html=True)
-            
-            # 카드 디자인
+        with idx_cols[i]:
+            st.markdown(f"<h2 style='text-align: center; font-size: 32px; font-weight: 800; margin-bottom: 5px;'>{name}</h2>", unsafe_allow_html=True)
             card_html = f"""
-            <div style="
-                background-color: #f8f9fa; 
-                padding: 35px 20px; 
-                border-radius: 20px; 
-                text-align: center;
-                border: 2px solid #eee;
-                box-shadow: 0px 4px 12px rgba(0,0,0,0.05);
-            ">
-                <h1 style="margin: 0; color: {color}; font-size: 68px; font-weight: bold; letter-spacing: -2px;">
-                    {rate:+.2f}%
-                </h1>
-                <p style="margin: 15px 0 0 0; font-size: 22px; color: #555; font-weight: 600;">
-                    현재가: {price:,.2f}
-                </p>
-                <hr style="border: 0.5px solid #ddd; margin: 25px 0;">
-                <p style="margin: 5px 0; font-size: 18px; color: #444;">
-                    <b>전고점:</b> {high_val:,.2f}
-                </p>
-                <p style="margin: 0; font-size: 14px; color: #999;">
-                    (달성일: {high_date})
-                </p>
+            <div style="background-color: #f8f9fa; padding: 30px 20px; border-radius: 20px; text-align: center; border: 2px solid #eee; box-shadow: 0px 4px 10px rgba(0,0,0,0.05);">
+                <h1 style="margin: 0; color: {color}; font-size: 60px; font-weight: bold;">{rate:+.2f}%</h1>
+                <p style="margin: 10px 0 0 0; font-size: 20px; color: #555;">현재가: {price:,.2f}</p>
+                <hr style="border: 0.5px solid #ddd; margin: 20px 0;">
+                <p style="margin: 0; font-size: 16px; color: #888;">전고점: {high_val:,.2f} ({high_date})</p>
             </div>
             """
             st.markdown(card_html, unsafe_allow_html=True)
-            
-    # 한국 시간 기준 표시
-    st.write(f"⏱️ 마지막 갱신: {current_time} (한국 시간 기준)")
 
-# 실행
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # --- 하단: 공포 지수 영역 ---
+    st.markdown("### 🕵️ 시장 심리 및 변동성")
+    fear_cols = st.columns(2)
+    
+    # VIX 카드
+    vix_val = get_vix_data()
+    vix_color = "#FF0000" if vix_val >= 20 else "#0000FF"
+    with fear_cols[0]:
+        st.markdown("<h2 style='text-align: center; font-size: 32px; font-weight: 800; margin-bottom: 5px;'>VIX (공포지수)</h2>", unsafe_allow_html=True)
+        vix_html = f"""
+        <div style="background-color: #fff4f4; padding: 30px 20px; border-radius: 20px; text-align: center; border: 2px solid #ffcccc;">
+            <h1 style="margin: 0; color: {vix_color}; font-size: 60px; font-weight: bold;">{vix_val:.2f}</h1>
+            <p style="margin: 10px 0 0 0; font-size: 18px; color: #666;">20 이상: 시장 불안 / 30 이상: 패닉</p>
+        </div>
+        """
+        st.markdown(vix_html, unsafe_allow_html=True)
+
+    # CNN Fear & Greed 카드
+    cnn_score, cnn_rating = get_cnn_fear_greed()
+    if cnn_score <= 25: cnn_color = "#FF0000"
+    elif cnn_score <= 45: cnn_color = "#FF8C00"
+    elif cnn_score <= 55: cnn_color = "#666666"
+    else: cnn_color = "#008000"
+    
+    with fear_cols[1]:
+        st.markdown("<h2 style='text-align: center; font-size: 32px; font-weight: 800; margin-bottom: 5px;'>CNN Fear & Greed</h2>", unsafe_allow_html=True)
+        cnn_html = f"""
+        <div style="background-color: #f4fff4; padding: 30px 20px; border-radius: 20px; text-align: center; border: 2px solid #ccffcc;">
+            <h1 style="margin: 0; color: {cnn_color}; font-size: 60px; font-weight: bold;">{cnn_score}</h1>
+            <p style="margin: 10px 0 0 0; font-size: 20px; color: #333; font-weight: bold;">상태: {cnn_rating}</p>
+        </div>
+        """
+        st.markdown(cnn_html, unsafe_allow_html=True)
+
+    st.write(f"⏱️ 마지막 업데이트: {current_time} (한국 시간)")
+
+# 앱 실행
 update_dashboard()
 
-# 5. 하단 공지
 st.divider()
-st.caption("※ 본 지표는 **Yahoo Finance 실시간 시세**를 바탕으로 하며, **최근 52주 신고가** 대비 현재 위치를 산출한 결과입니다.")
+st.caption("※ 데이터 출처: Yahoo Finance 및 CNN Business 실시간 데이터 기준")
