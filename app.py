@@ -75,7 +75,6 @@ for i, (name, symbol) in enumerate(indices.items()):
 
 st.divider()
 st.caption("※ 모든 데이터는 Yahoo Finance 실시간 시세를 바탕으로 하며, 최근 52주 신고가(고점) 대비 현재 위치를 산출한 결과입니다.")
-st.caption("김채원 사랑해")
 
 
 
