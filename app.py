@@ -33,23 +33,32 @@ def get_vix_data():
 
 def get_cnn_fear_greed():
     try:
-        headers = {'User-Agent': 'Mozilla/5.0'}
+        # [수정] CNN 서버 차단을 피하기 위해 더 정교한 브라우저 정보(User-Agent) 추가
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+            'Accept': 'application/json',
+            'Referer': 'https://www.cnn.com/markets/fear-and-greed'
+        }
         url = "https://production.dataviz.cnn.io/index/feargreed/graphdata"
-        r = requests.get(url, headers=headers, timeout=5)
-        data = r.json()
-        score = data['fear_and_greed']['score']
-        rating = data['fear_and_greed']['rating']
-        return score, rating
-    except: return 0, "연결 오류"
+        r = requests.get(url, headers=headers, timeout=10) # 타임아웃 10초로 연장
+        
+        if r.status_code == 200:
+            data = r.json()
+            score = round(data['fear_and_greed']['score'])
+            rating = data['fear_and_greed']['rating']
+            return score, rating
+        else:
+            return 0, f"통신 상태 확인 ({r.status_code})"
+    except: 
+        return 0, "데이터 점검 중"
 
 # 3. 메인 제목
 st.title("📊 미국 증시 및 시장 심리 실시간 현황")
-st.write("3대 지수의 전고점 대비 등락과 시장의 공포 수준을 10초마다 자동 갱신합니다.")
+st.write("3대 지수와 시장의 공포 수준을 10초마다 자동 갱신합니다.")
 
 # 4. 실시간 업데이트 영역
 @st.fragment(run_every="10s")
 def update_dashboard():
-    # 라이브러리 없이 한국 시간 계산
     now_kst = datetime.utcnow() + timedelta(hours=9)
     current_time = now_kst.strftime('%H:%M:%S')
 
