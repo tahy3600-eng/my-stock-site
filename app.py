@@ -96,7 +96,6 @@ def update_dashboard():
                 text-align: center; border: 2px solid #eee; min-height: 200px;
             ">
                 <h1 style="margin: 0; color: {vix_color}; font-size: 55px; font-weight: bold;">{vix_val:.2f}</h1>
-                <p style="color: #666;">{ "위험 신호" if vix_val >= 20 else "안정세" }</p>
             </div>
         """, unsafe_allow_html=True)
 
@@ -130,6 +129,7 @@ update_dashboard()
 
 st.divider()
 st.caption("※ 데이터 출처: Yahoo Finance (환율은 실시간 기준 15~20분 지연될 수 있습니다. 김채원 사랑해)")
+
 
 
 
