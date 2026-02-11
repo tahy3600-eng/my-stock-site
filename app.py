@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 # 1. 페이지 설정
 st.set_page_config(
-    page_title="Market Macro Dashboard",
+    page_title="Market Dashboard",
     page_icon="📊",
     layout="wide"
 )
@@ -57,7 +57,7 @@ def draw_metric_card(title, price, change_pct, sub_text="", is_vix=False):
     """, unsafe_allow_html=True)
 
 # 4. 메인 대시보드 레이아웃
-st.title("📈 Market Macro Real-time")
+st.title("📈 Market Index Real-time")
 st.markdown("<br>", unsafe_allow_html=True)
 
 @st.fragment(run_every="10s")
@@ -65,7 +65,7 @@ def render_dashboard():
     now = (datetime.utcnow() + timedelta(hours=9)).strftime('%Y-%m-%d %H:%M:%S')
     
     # --- 구역 1: 3대 지수 ---
-    st.subheader("🏦 Major Market Indices")
+    st.subheader("🏦 Major Market Index")
     idx_cols = st.columns(3)
     indices = {"Nasdaq 100": "^NDX", "S&P 500": "^GSPC", "Dow Jones": "^DJI"}
     
@@ -96,3 +96,4 @@ def render_dashboard():
     st.markdown(f"<p style='text-align: left; color: #bbb; font-size: 14px; margin-top: 50px;'>⏱ Last Synced: {now} (KST)</p>", unsafe_allow_html=True)
 
 render_dashboard()
+
