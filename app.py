@@ -17,7 +17,7 @@ def get_high_reference(symbol):
         df = ticker.history(period="1y")
         if df.empty: return None
         high_val = df['High'].max()
-        high_date = df['High'].idxmax().strftime('%Y-%m-%d')
+        high_date = df['High'].idxmax().strftime('%Y-%m-%d') # 날짜 포맷팅
         return {"high": high_val, "date": high_date}
     except:
         return None
@@ -35,9 +35,8 @@ def get_live_data(symbol):
     except:
         return 0.0, 0.0, 0.0
 
-# 3. UI 컴포넌트 함수 (위치 교체 적용)
+# 3. UI 컴포넌트 함수
 def draw_metric_card(title, price, change_pct, sub_text="", is_vix=False):
-    # 색상 로직
     if is_vix:
         color = "#008000" if price < 20 else "#FF4B4B"
     else:
@@ -62,7 +61,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 
 @st.fragment(run_every="10s")
 def render_dashboard():
-    now = (datetime.utcnow() + timedelta(hours=9)).strftime('%Y-%m-%d %H:%M:%S')
+    now = (datetime.utcnow() + timedelta(hours=9)).strftime('%H:%M:%S')
     
     # --- 구역 1: 3대 지수 ---
     st.subheader("🏦 Major Market Index")
@@ -75,7 +74,13 @@ def render_dashboard():
         if ref and current_price > 0:
             gap_pct = ((current_price - ref['high']) / ref['high']) * 100
             with idx_cols[i]:
-                draw_metric_card(name, current_price, gap_pct, f"52W High: {ref['high']:,.0f}")
+                # 핵심 수정: ref['date']를 f-string에 추가
+                draw_metric_card(
+                    name, 
+                    current_price, 
+                    gap_pct, 
+                    f"52W High: {ref['high']:,.0f} ({ref['date']})"
+                )
 
     st.markdown("<hr style='margin: 30px 0;'>", unsafe_allow_html=True)
 
@@ -86,15 +91,13 @@ def render_dashboard():
     # 1. 달러-원 환율
     with macro_cols[0]:
         ex_price, ex_change, ex_pct = get_live_data("USDKRW=X")
-        draw_metric_card("USD / KRW", ex_price, ex_pct, f"Daily Change: {ex_change:+.2f} KRW")
+        draw_metric_card("USD / KRW", ex_price, ex_pct, f"Last: {ex_price:,.2f} (Change: {ex_change:+.2f})")
         
     # 2. VIX 지수
     with macro_cols[1]:
         vix_price, _, vix_pct = get_live_data("^VIX")
-        draw_metric_card("VIX (Fear Index)", vix_price, vix_pct, "Volatility Measure", is_vix=True)
+        draw_metric_card("VIX (Fear Index)", vix_price, vix_pct, "Market Volatility", is_vix=True)
 
-    st.markdown(f"<p style='text-align: left; color: #bbb; font-size: 14px; margin-top: 50px;'>⏱ Last Synced: {now} (KST)</p>", unsafe_allow_html=True)
+    st.markdown(f"<p style='text-align: left; color: #bbb; font-size: 14px; margin-top: 50px;'>⏱ Last Updated: {now} (KST)</p>", unsafe_allow_html=True)
 
 render_dashboard()
-
-
