@@ -2,7 +2,7 @@ import streamlit as st
 import yfinance as yf
 from datetime import datetime, timedelta
 
-# 1. 페이지 설정 및 스타일
+# 1. 페이지 설정 및 전역 스타일
 st.set_page_config(page_title="Market Overview", page_icon="📈", layout="wide")
 
 st.markdown("""
@@ -10,12 +10,11 @@ st.markdown("""
     @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;800&display=swap');
     * { font-family: 'Pretendard', sans-serif; }
     .main { background-color: #f8f9fa; }
-    /* 카드 사이 여백 조절 */
     [data-testid="column"] { padding: 0 10px; }
     </style>
     """, unsafe_allow_html=True)
 
-# 2. 데이터 수집 로직 (캐싱 및 실시간)
+# 2. 데이터 수집 함수
 @st.cache_data(ttl=3600)
 def get_high_info(symbol):
     try:
@@ -33,9 +32,9 @@ def get_live(symbol):
         return df['Close'].iloc[-1]
     except: return 0.0
 
-# 3. 심플 & 직관 카드 렌더링 함수
+# 3. 카드 렌더링 함수 (태그 노출 방지 로직 적용)
 def draw_card(title, price, pct=None, sub="", is_vix=False, is_index=False):
-    # 색상 정의
+    # 색상 상수
     C_RED, C_BLUE, C_GREEN, C_ORANGE = "#D62828", "#003049", "#2A9D8F", "#F77F00"
     
     main_display = ""
@@ -43,15 +42,16 @@ def draw_card(title, price, pct=None, sub="", is_vix=False, is_index=False):
     footer_html = ""
 
     if is_index:
-        # 지수 카드: 퍼센트(%)를 거대하게, 수치를 작게
-        # 전고점보다 높으면 빨강, 낮으면 파랑
+        # 지수 카드: 퍼센트(%)가 메인, 수치가 서브
+        # 현재가가 전고점보다 높거나 같으면 빨강(신고가), 낮으면 파랑
         status_color = C_RED if pct >= 0 else C_BLUE
         main_display = f'<div style="font-size:48px; font-weight:800; color:{status_color}; line-height:1;">{pct:+.2f}%</div>'
         sub_display = f'<div style="font-size:20px; font-weight:600; color:#444; margin-top:8px;">{price:,.2f}</div>'
-        footer_html = f'<div style="color:#adb5bd; font-size:11px; margin-top:15px; font-weight:400;">ATH {sub}</div>'
+        if sub:
+            footer_html = f'<div style="color:#adb5bd; font-size:11px; margin-top:15px; font-weight:400;">ATH {sub}</div>'
     
     elif is_vix:
-        # VIX: 3단계 상태 로직 (20미만 안정 / 20~30 주의 / 30이상 위험)
+        # VIX: 3단계 상태 로직
         if price < 20:
             v_color, v_state = C_GREEN, "STABLE"
         elif price < 30:
@@ -63,35 +63,36 @@ def draw_card(title, price, pct=None, sub="", is_vix=False, is_index=False):
         footer_html = f'<div style="color:{v_color}; font-size:13px; font-weight:700; margin-top:15px; letter-spacing:1px;">● {v_state}</div>'
     
     else:
-        # 환율: 절대 수치만 강조
+        # 환율 등 기타 매크로
         main_display = f'<div style="font-size:45px; font-weight:800; color:#212529; line-height:1;">{price:,.2f}</div>'
-        footer_html = "" # 하단 요소 제거
 
-    # HTML 조립 (버그 방지를 위해 태그 사이 공백 최소화)
-    html = f"""
-    <div style="background:white; padding:40px 20px; border-radius:24px; box-shadow:0 4px 20px rgba(0,0,0,0.03); border:1px solid #f1f3f5; text-align:center; margin-bottom:20px;">
-        <div style="color:#6c757d; font-size:12px; font-weight:600; letter-spacing:1.2px; margin-bottom:15px; text-transform:uppercase;">{title}</div>
-        {main_display}
-        {sub_display}
-        {footer_html}
-    </div>
-    """
-    st.markdown(html, unsafe_allow_html=True)
+    # 모든 HTML을 들여쓰기 없는 단일 문자열로 결합 (마크다운 버그 방지 핵심)
+    html_content = (
+        f'<div style="background:white; padding:40px 20px; border-radius:24px; '
+        f'box-shadow:0 4px 20px rgba(0,0,0,0.03); border:1px solid #f1f3f5; '
+        f'text-align:center; margin-bottom:20px;">'
+        f'<div style="color:#6c757d; font-size:12px; font-weight:600; '
+        f'letter-spacing:1.2px; margin-bottom:15px; text-transform:uppercase;">{title}</div>'
+        f'{main_display}{sub_display}{footer_html}</div>'
+    )
+    
+    st.markdown(html_content, unsafe_allow_html=True)
 
-# 4. 대시보드 레이아웃 구성
+# 4. 한국 시간 헬퍼 함수
 def get_kst_now():
     return datetime.utcnow() + timedelta(hours=9)
 
+# 5. 메인 레이아웃
 st.title("Market Overview")
 
 @st.fragment(run_every="10s")
 def render_dashboard():
-    # 상단 시간 표시 (KST 고정)
+    # 시간 표시 (KST)
     kst_now = get_kst_now().strftime('%H:%M:%S')
     st.caption(f"⏱ Last synced: {kst_now} (KST)")
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # --- 섹션 1: 주요 지수 (ATH 기반) ---
+    # --- 상단: 3대 지수 섹션 ---
     idx_cols = st.columns(3)
     indices = {"Nasdaq 100": "^NDX", "S&P 500": "^GSPC", "Dow Jones": "^DJI"}
     
@@ -105,7 +106,7 @@ def render_dashboard():
 
     st.markdown("<div style='margin: 15px 0;'></div>", unsafe_allow_html=True)
 
-    # --- 섹션 2: 매크로 지표 (환율 & VIX) ---
+    # --- 하단: 매크로 지표 섹션 ---
     m_col1, m_col2 = st.columns(2)
     
     with m_col1:
