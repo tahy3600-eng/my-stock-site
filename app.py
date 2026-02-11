@@ -75,7 +75,7 @@ def render_dashboard():
         if ref and current_price > 0:
             gap_pct = ((current_price - ref['high']) / ref['high']) * 100
             with idx_cols[i]:
-                draw_metric_card(name, current_price, gap_pct, f"vs 52W High: {ref['high']:,.0f}")
+                draw_metric_card(name, current_price, gap_pct, f"52W High: {ref['high']:,.0f}")
 
     st.markdown("<hr style='margin: 30px 0;'>", unsafe_allow_html=True)
 
@@ -96,4 +96,5 @@ def render_dashboard():
     st.markdown(f"<p style='text-align: left; color: #bbb; font-size: 14px; margin-top: 50px;'>⏱ Last Synced: {now} (KST)</p>", unsafe_allow_html=True)
 
 render_dashboard()
+
 
