@@ -120,7 +120,7 @@ def update_dashboard():
 
     # 마지막 업데이트
     st.markdown(f"""
-        <div style="text-align: right; margin-top: 30px; color: #999; font-size: 14px;">
+        <div style="text-align: left; margin-top: 30px; color: #999; font-size: 14px;">
             ⏱️ 마지막 업데이트: {current_time} (한국 시간)
         </div>
     """, unsafe_allow_html=True)
@@ -130,5 +130,6 @@ update_dashboard()
 
 st.divider()
 st.caption("※ 데이터 출처: Yahoo Finance (환율은 실시간 기준 15~20분 지연될 수 있습니다. 김채원 사랑해)")
+
 
 
