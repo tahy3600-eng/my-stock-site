@@ -128,7 +128,9 @@ def update_dashboard():
 update_dashboard()
 
 st.divider()
-st.caption("※ 데이터 출처: Yahoo Finance (환율은 실시간 기준 15~20분 지연될 수 있습니다. 김채원 사랑해)")
+st.caption("※ 데이터 출처: Yahoo Finance (환율은 실시간 기준 15~20분 지연될 수 있습니다.)")
+st.caption("김채원 사랑해")
+
 
 
 
