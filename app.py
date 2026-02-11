@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 # 1. 페이지 설정
 st.set_page_config(page_title="Market Dashboard", page_icon="📈", layout="wide")
 
-# 전역 폰트 및 스타일 적용
+# 전역 스타일 설정
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;800&display=swap');
@@ -14,7 +14,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 2. 데이터 수집 함수 (캐싱 적용)
+# 2. 데이터 수집 함수 (캐싱)
 @st.cache_data(ttl=3600)
 def get_high_info(symbol):
     try:
@@ -32,15 +32,12 @@ def get_live(symbol):
         return curr, ((curr - prev) / prev) * 100
     except: return 0.0, 0.0
 
-# 3. 심플 & 직관 카드 렌더링 함수
+# 3. 카드 렌더링 함수
 def draw_card(title, price, pct=None, sub="", is_vix=False):
-    # 색상 팔레트
-    RED, BLUE, GREEN, GRAY = "#D62828", "#003049", "#2A9D8F", "#8D99AE"
-    
+    RED, BLUE, GREEN = "#D62828", "#003049", "#2A9D8F"
     pct_html = ""
     sub_html = ""
     
-    # 1. 등락률/상태 로직
     if is_vix:
         vix_color = GREEN if price < 20 else RED
         vix_state = "STABLE" if price < 20 else "RISKY"
@@ -48,20 +45,24 @@ def draw_card(title, price, pct=None, sub="", is_vix=False):
     elif pct is not None:
         p_color = RED if pct >= 0 else BLUE
         pct_html = f'<div style="font-size:20px; font-weight:800; color:{p_color};">{pct:+.2f}%</div>'
-        if sub: # 지수 전고점 정보가 있을 때만 생성
+        if sub:
             sub_html = f'<div style="color:#adb5bd; font-size:11px; margin-top:15px;">{sub}</div>'
     
-    # 2. HTML 조립 (들여쓰기 없이 한 줄로 처리하여 버그 방지)
     html = f"""<div style="background:white; padding:35px 20px; border-radius:24px; box-shadow:0 10px 30px rgba(0,0,0,0.02); border:1px solid #f1f3f5; text-align:center; margin-bottom:20px;"><div style="color:#6c757d; font-size:13px; font-weight:600; letter-spacing:1px; margin-bottom:10px; text-transform:uppercase;">{title}</div><div style="font-size:40px; font-weight:800; color:#212529; letter-spacing:-1px; margin-bottom:5px;">{price:,.2f}</div>{pct_html}{sub_html}</div>"""
-    
     st.markdown(html, unsafe_allow_html=True)
 
 # 4. 대시보드 레이아웃
 st.title("Market Overview")
-st.caption(f"⏱ Last synced: {datetime.now().strftime('%H:%M:%S')} (KST)")
+
+# 헬퍼 함수: 항상 한국 시간을 반환
+def get_kst_now():
+    return datetime.utcnow() + timedelta(hours=9)
 
 @st.fragment(run_every="10s")
 def render():
+    # 업데이트 시간 표기 수정
+    kst_now = get_kst_now().strftime('%H:%M:%S')
+    st.caption(f"⏱ Last synced: {kst_now} (KST)")
     st.markdown("<br>", unsafe_allow_html=True)
     
     # --- 상단: 3대 지수 ---
@@ -79,13 +80,11 @@ def render():
 
     # --- 하단: 매크로 지표 ---
     m_col1, m_col2 = st.columns(2)
-    
     with m_col1:
         usd, _ = get_live("USDKRW=X")
-        draw_card("USD / KRW", usd) # 퍼센트와 하단 문구 없이 깔끔하게 출력
-        
+        draw_card("USD / KRW", usd)
     with m_col2:
         vix, _ = get_live("^VIX")
-        draw_card("VIX INDEX", vix, is_vix=True) # VIX 전용 상태 표시 포함
+        draw_card("VIX INDEX", vix, is_vix=True)
 
 render()
