@@ -43,7 +43,7 @@ def get_exchange_rate():
     except: return 0.0, 0.0, 0.0
 
 # 3. 메인 타이틀
-st.title("📈 미국 증시 및 달러 환율 실시간 현황")
+st.title("📈 미국 지수 및 달러 환율 실시간")
 
 # 4. 실시간 업데이트 영역
 @st.fragment(run_every="10s")
@@ -88,7 +88,7 @@ def update_dashboard():
     vix_val = get_vix_data()
     vix_color = "#FF4B4B" if vix_val >= 20 else "#008000"
     with ind_cols[0]:
-        st.markdown("<h2 style='text-align: center; font-size: 22px; font-weight: 800;'>VIX (공포지수)</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='text-align: center; font-size: 22px; font-weight: 800;'>VIX </h2>", unsafe_allow_html=True)
         st.markdown(f"""
             <div style="
                 display: flex; flex-direction: column; justify-content: center;
@@ -130,4 +130,5 @@ update_dashboard()
 
 st.divider()
 st.caption("※ 데이터 출처: Yahoo Finance (환율은 실시간 기준 15~20분 지연될 수 있습니다. 김채원 사랑해)")
+
 
