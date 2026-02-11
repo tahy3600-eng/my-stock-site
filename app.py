@@ -9,7 +9,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# 2. 데이터 처리 로직 (캐싱 적용)
+# 2. 데이터 처리 로직
 @st.cache_data(ttl=3600)
 def get_high_reference(symbol):
     try:
@@ -35,9 +35,9 @@ def get_live_data(symbol):
     except:
         return 0.0, 0.0, 0.0
 
-# 3. UI 컴포넌트 함수
+# 3. UI 컴포넌트 함수 (위치 교체 적용)
 def draw_metric_card(title, price, change_pct, sub_text="", is_vix=False):
-    # VIX는 낮을수록 안정적이므로 색상 로직 별도 처리
+    # 색상 로직
     if is_vix:
         color = "#008000" if price < 20 else "#FF4B4B"
     else:
@@ -50,9 +50,9 @@ def draw_metric_card(title, price, change_pct, sub_text="", is_vix=False):
             margin-bottom: 20px; text-align: center;
         ">
             <h4 style="margin: 0; color: #666; font-size: 18px;">{title}</h4>
-            <h2 style="margin: 15px 0; color: {color}; font-size: 40px; font-weight: 800;">{change_pct:+.2f}%</h2>
-            <p style="margin: 0; font-weight: bold; font-size: 22px; color: #333;">{price:,.2f}</p>
-            <p style="margin: 10px 0 0 0; color: #999; font-size: 13px;">{sub_text}</p>
+            <h2 style="margin: 15px 0 5px 0; color: #333; font-size: 42px; font-weight: 800;">{price:,.2f}</h2>
+            <p style="margin: 0; font-weight: bold; font-size: 24px; color: {color};">{change_pct:+.2f}%</p>
+            <p style="margin: 15px 0 0 0; color: #999; font-size: 13px;">{sub_text}</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -64,7 +64,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 def render_dashboard():
     now = (datetime.utcnow() + timedelta(hours=9)).strftime('%Y-%m-%d %H:%M:%S')
     
-    # --- 구역 1: 3대 지수 (상단 배치) ---
+    # --- 구역 1: 3대 지수 ---
     st.subheader("🏦 Major Market Indices")
     idx_cols = st.columns(3)
     indices = {"Nasdaq 100": "^NDX", "S&P 500": "^GSPC", "Dow Jones": "^DJI"}
@@ -75,11 +75,11 @@ def render_dashboard():
         if ref and current_price > 0:
             gap_pct = ((current_price - ref['high']) / ref['high']) * 100
             with idx_cols[i]:
-                draw_metric_card(name, current_price, gap_pct, f"52W High: {ref['high']:,.0f} ({ref['date']})")
+                draw_metric_card(name, current_price, gap_pct, f"vs 52W High: {ref['high']:,.0f}")
 
     st.markdown("<hr style='margin: 30px 0;'>", unsafe_allow_html=True)
 
-    # --- 구역 2: 매크로 지표 (하단 배치) ---
+    # --- 구역 2: 매크로 지표 ---
     st.subheader("📊 Macro Indicators")
     macro_cols = st.columns(2)
     
@@ -93,7 +93,6 @@ def render_dashboard():
         vix_price, _, vix_pct = get_live_data("^VIX")
         draw_metric_card("VIX (Fear Index)", vix_price, vix_pct, "Volatility Measure", is_vix=True)
 
-    # 업데이트 시간
     st.markdown(f"<p style='text-align: left; color: #bbb; font-size: 14px; margin-top: 50px;'>⏱ Last Synced: {now} (KST)</p>", unsafe_allow_html=True)
 
 render_dashboard()
