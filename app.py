@@ -14,7 +14,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 2. 데이터 수집 함수
+# 2. 데이터 수집 함수 (안정성 강화)
 @st.cache_data(ttl=3600)
 def get_high_info(symbol):
     try:
@@ -22,19 +22,20 @@ def get_high_info(symbol):
         df = t.history(period="1y")
         if df.empty: return None
         return {"val": df['High'].max(), "date": df['High'].idxmax().strftime('%Y.%m.%d')}
-    except: return None
+    except Exception as e:
+        return None
 
 def get_live(symbol):
     try:
         t = yf.Ticker(symbol)
-        df = t.history(period="2d")
+        df = t.history(period="5d") # 2일치 데이터가 부족할 경우를 대비해 5일로 확장
         if df.empty: return 0.0
         return df['Close'].iloc[-1]
-    except: return 0.0
+    except Exception as e:
+        return 0.0
 
-# 3. 카드 렌더링 함수 (태그 노출 방지 로직 적용)
+# 3. 카드 렌더링 함수
 def draw_card(title, price, pct=None, sub="", is_vix=False, is_index=False):
-    # 색상 상수
     C_RED, C_BLUE, C_GREEN, C_ORANGE = "#D62828", "#003049", "#2A9D8F", "#F77F00"
     
     main_display = ""
@@ -42,8 +43,6 @@ def draw_card(title, price, pct=None, sub="", is_vix=False, is_index=False):
     footer_html = ""
 
     if is_index:
-        # 지수 카드: 퍼센트(%)가 메인, 수치가 서브
-        # 현재가가 전고점보다 높거나 같으면 빨강(신고가), 낮으면 파랑
         status_color = C_RED if pct >= 0 else C_BLUE
         main_display = f'<div style="font-size:48px; font-weight:800; color:{status_color}; line-height:1;">{pct:+.2f}%</div>'
         sub_display = f'<div style="font-size:20px; font-weight:600; color:#444; margin-top:8px;">{price:,.2f}</div>'
@@ -51,7 +50,6 @@ def draw_card(title, price, pct=None, sub="", is_vix=False, is_index=False):
             footer_html = f'<div style="color:#adb5bd; font-size:11px; margin-top:15px; font-weight:400;">ATH {sub}</div>'
     
     elif is_vix:
-        # VIX: 3단계 상태 로직
         if price < 20:
             v_color, v_state = C_GREEN, "STABLE"
         elif price < 30:
@@ -63,10 +61,8 @@ def draw_card(title, price, pct=None, sub="", is_vix=False, is_index=False):
         footer_html = f'<div style="color:{v_color}; font-size:13px; font-weight:700; margin-top:15px; letter-spacing:1px;">● {v_state}</div>'
     
     else:
-        # 환율 등 기타 매크로
         main_display = f'<div style="font-size:45px; font-weight:800; color:#212529; line-height:1;">{price:,.2f}</div>'
 
-    # 모든 HTML을 들여쓰기 없는 단일 문자열로 결합 (마크다운 버그 방지 핵심)
     html_content = (
         f'<div style="background:white; padding:40px 20px; border-radius:24px; '
         f'box-shadow:0 4px 20px rgba(0,0,0,0.03); border:1px solid #f1f3f5; '
@@ -80,29 +76,34 @@ def draw_card(title, price, pct=None, sub="", is_vix=False, is_index=False):
 
 # 4. 한국 시간 헬퍼 함수
 def get_kst_now():
+    # 현재 서버 시간이 UTC일 가능성이 크므로 KST로 변환
     return datetime.utcnow() + timedelta(hours=9)
 
-# 5. 메인 레이아웃
+# 5. 메인 레이아웃 및 대시보드
 st.title("Market Overview")
 
 @st.fragment(run_every="10s")
 def render_dashboard():
-    # 시간 표시 (KST)
-    kst_now = get_kst_now().strftime('%H:%M:%S')
+    kst_now = get_kst_now().strftime('%Y-%m-%d %H:%M:%S')
     st.caption(f"⏱ Last synced: {kst_now} (KST)")
     st.markdown("<br>", unsafe_allow_html=True)
     
     # --- 상단: 3대 지수 섹션 ---
     idx_cols = st.columns(3)
-    indices = {"Nasdaq 100": "^NDX", "S&P 500": "^GSPC", "Dow Jones": "^DJI"}
+    # Nasdaq 100(^NDX) 대신 더 보편적인 Nasdaq Composite(^IXIC) 사용
+    indices = {"Nasdaq": "^IXIC", "S&P 500": "^GSPC", "Dow Jones": "^DJI"}
     
     for i, (name, sym) in enumerate(indices.items()):
         ref = get_high_info(sym)
         curr = get_live(sym)
-        if ref and curr > 0:
-            gap = ((curr - ref['val']) / ref['val']) * 100
-            with idx_cols[i]:
+        
+        with idx_cols[i]:
+            if ref and curr > 0:
+                gap = ((curr - ref['val']) / ref['val']) * 100
                 draw_card(name, curr, gap, sub=f"{ref['val']:,.0f} ({ref['date']})", is_index=True)
+            else:
+                # 데이터 로드 실패 시 안내 표시
+                st.warning(f"⚠️ {name} 데이터를 불러올 수 없습니다.")
 
     st.markdown("<div style='margin: 15px 0;'></div>", unsafe_allow_html=True)
 
@@ -111,11 +112,17 @@ def render_dashboard():
     
     with m_col1:
         usd = get_live("USDKRW=X")
-        draw_card("USD / KRW", usd)
+        if usd > 0:
+            draw_card("USD / KRW", usd)
+        else:
+            st.warning("환율 데이터를 불러올 수 없습니다.")
         
     with m_col2:
         vix = get_live("^VIX")
-        draw_card("VIX INDEX", vix, is_vix=True)
+        if vix > 0:
+            draw_card("VIX INDEX", vix, is_vix=True)
+        else:
+            st.warning("VIX 데이터를 불러올 수 없습니다.")
 
 # 실행
 render_dashboard()
