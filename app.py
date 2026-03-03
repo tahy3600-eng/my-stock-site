@@ -2,13 +2,10 @@ import streamlit as st
 import yfinance as yf
 from datetime import datetime, timedelta
 
-# -------------------------
-# 페이지 설정
-# -------------------------
 st.set_page_config(page_title="ETF Market Watch", page_icon="📈", layout="wide")
 
 # -------------------------
-# 매수 시그널 로직
+# 매수 시그널
 # -------------------------
 def get_buy_signal(pct):
     if pct <= -30:
@@ -23,7 +20,7 @@ def get_buy_signal(pct):
         return "HOLD"
 
 # -------------------------
-# 데이터 함수
+# 데이터
 # -------------------------
 @st.cache_data(ttl=3600)
 def get_high_info(symbol):
@@ -54,82 +51,77 @@ def get_kst_now():
     return datetime.utcnow() + timedelta(hours=9)
 
 # -------------------------
-# 자동 새로고침 (fragment 대신 안정적 방식)
-# -------------------------
-from streamlit_autorefresh import st_autorefresh
-st_autorefresh(interval=30000, key="refresh")
-
-# -------------------------
-# 메인 화면
+# 화면
 # -------------------------
 st.title("Market Overview")
 
-kst_now = get_kst_now().strftime("%Y-%m-%d %H:%M:%S")
-st.caption(f"⏱ Last synced: {kst_now} (KST) | Data: Yahoo Finance")
+@st.fragment(run_every="30s")
+def render_dashboard():
 
-st.subheader("Core ETFs (vs ATH)")
+    kst_now = get_kst_now().strftime("%Y-%m-%d %H:%M:%S")
+    st.caption(f"⏱ Last synced: {kst_now} (KST) | Data: Yahoo Finance")
 
-col1, col2 = st.columns(2)
+    st.subheader("Core ETFs (vs ATH)")
+    col1, col2 = st.columns(2)
 
-etfs = {
-    "Nasdaq 100 (QQQ)": "QQQ",
-    "S&P 500 (VOO)": "VOO"
-}
+    etfs = {
+        "Nasdaq 100 (QQQ)": "QQQ",
+        "S&P 500 (VOO)": "VOO"
+    }
 
-for i, (name, sym) in enumerate(etfs.items()):
-    ref = get_high_info(sym)
-    curr = get_live(sym)
+    for i, (name, sym) in enumerate(etfs.items()):
+        ref = get_high_info(sym)
+        curr = get_live(sym)
 
-    target_col = col1 if i == 0 else col2
+        with (col1 if i == 0 else col2):
+            if ref and curr > 0:
+                gap = ((curr - ref["val"]) / ref["val"]) * 100
+                signal = get_buy_signal(gap)
 
-    with target_col:
-        if ref and curr > 0:
-            gap = ((curr - ref["val"]) / ref["val"]) * 100
-            signal = get_buy_signal(gap)
+                st.metric(
+                    label=name,
+                    value=f"${curr:,.2f}",
+                    delta=f"{gap:+.2f}% vs ATH"
+                )
 
-            st.metric(
-                label=name,
-                value=f"${curr:,.2f}",
-                delta=f"{gap:+.2f}% vs ATH"
-            )
+                st.caption(f"ATH ${ref['val']:,.1f} ({ref['date']})")
 
-            st.caption(f"ATH ${ref['val']:,.1f} ({ref['date']})")
-
-            if signal == "STRONG BUY":
-                st.error(f"● {signal}")
-            elif signal == "BUY":
-                st.warning(f"● {signal}")
-            elif signal == "ACCUMULATE":
-                st.success(f"● {signal}")
-            elif signal == "REBALANCE":
-                st.info(f"● {signal}")
+                if signal == "STRONG BUY":
+                    st.error(f"● {signal}")
+                elif signal == "BUY":
+                    st.warning(f"● {signal}")
+                elif signal == "ACCUMULATE":
+                    st.success(f"● {signal}")
+                elif signal == "REBALANCE":
+                    st.info(f"● {signal}")
+                else:
+                    st.write(f"● {signal}")
             else:
-                st.write(f"● {signal}")
+                st.warning("데이터 로딩 중...")
+
+    st.markdown("---")
+
+    m1, m2 = st.columns(2)
+
+    with m1:
+        usd = get_live("USDKRW=X")
+        if usd > 0:
+            st.metric("USD / KRW", f"{usd:,.2f}")
         else:
-            st.warning("데이터 로딩 중...")
+            st.error("환율 로드 실패")
 
-st.markdown("---")
+    with m2:
+        vix = get_live("^VIX")
+        if vix > 0:
+            st.metric("VIX INDEX", f"{vix:,.2f}")
 
-m1, m2 = st.columns(2)
-
-with m1:
-    usd = get_live("USDKRW=X")
-    if usd > 0:
-        st.metric("USD / KRW", f"{usd:,.2f}")
-    else:
-        st.error("환율 로드 실패")
-
-with m2:
-    vix = get_live("^VIX")
-    if vix > 0:
-        st.metric("VIX INDEX", f"{vix:,.2f}")
-
-        if vix < 20:
-            st.success("● STABLE")
-        elif vix < 30:
-            st.warning("● CAUTION")
+            if vix < 20:
+                st.success("● STABLE")
+            elif vix < 30:
+                st.warning("● CAUTION")
+            else:
+                st.error("● PANIC")
         else:
-            st.error("● PANIC")
-    else:
-        st.error("VIX 로드 실패")
-        
+            st.error("VIX 로드 실패")
+
+render_dashboard()
