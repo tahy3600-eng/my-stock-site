@@ -1,10 +1,8 @@
 import streamlit as st
 import yfinance as yf
 from datetime import datetime, timedelta
-import pandas as pd
-from concurrent.futures import ThreadPoolExecutor
 
-# 1. 페이지 설정 및 디자인 개선
+# 1. 페이지 설정
 st.set_page_config(page_title="ETF Market Watch", page_icon="📈", layout="wide")
 
 st.markdown("""
@@ -12,110 +10,99 @@ st.markdown("""
     @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;800&display=swap');
     * { font-family: 'Pretendard', sans-serif; }
     .main { background-color: #f8f9fa; }
-    .metric-card {
-        background: white; padding: 30px 20px; border-radius: 20px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #f1f3f5;
-        transition: transform 0.2s ease-in-out; text-align: center;
-    }
-    .metric-card:hover { transform: translateY(-5px); }
     </style>
     """, unsafe_allow_html=True)
 
-# 2. 고효율 데이터 수집 로직
-@st.cache_data(ttl=86400) # 전고점은 하루에 한 번만 갱신
-def get_historical_high(symbol):
+# 2. 데이터 수집 함수 (안정성 강화)
+@st.cache_data(ttl=3600)
+def get_high_info(symbol):
     try:
-        ticker = yf.Ticker(symbol)
-        df = ticker.history(period="2y")
+        t = yf.Ticker(symbol)
+        df = t.history(period="2y")
         if df.empty: return None
-        high_val = df['High'].max()
-        high_date = df['High'].idxmax().strftime('%Y.%m.%d')
-        return {"val": high_val, "date": high_date}
-    except Exception:
+        return {"val": df['High'].max(), "date": df['High'].idxmax().strftime('%Y.%m.%d')}
+    except:
         return None
 
-def get_current_price(symbol):
+def get_live(symbol):
     try:
-        # history(period="1d")보다 빠른 최신가 가져오기
-        ticker = yf.Ticker(symbol)
-        price = ticker.fast_info['last_price']
-        return price if price is not None else 0.0
+        t = yf.Ticker(symbol)
+        df = t.history(period="5d")
+        if df.empty: return 0.0
+        return df['Close'].iloc[-1]
     except:
-        # fast_info 실패 시 대안
-        df = ticker.history(period="1d")
-        return df['Close'].iloc[-1] if not df.empty else 0.0
+        return 0.0
 
-# 3. 카드 렌더링 (HTML 컴포넌트화)
-def draw_card(title, price, pct=None, sub="", mode="normal"):
-    colors = {"red": "#D62828", "blue": "#003049", "green": "#2A9D8F", "orange": "#F77F00", "gray": "#6c757d"}
+# 3. 카드 렌더링 함수 (디자인 최적화)
+def draw_card(title, price, pct=None, sub="", is_vix=False, is_etf=False):
+    C_RED, C_BLUE, C_GREEN, C_ORANGE = "#D62828", "#003049", "#2A9D8F", "#F77F00"
     
-    content = ""
-    if mode == "etf":
-        status_color = colors["red"] if pct >= 0 else colors["blue"]
-        content = f"""
-            <div style="font-size:42px; font-weight:800; color:{status_color};">{pct:+.2f}%</div>
-            <div style="font-size:18px; font-weight:600; color:#444; margin-top:5px;">${price:,.2f}</div>
-            <div style="color:#adb5bd; font-size:11px; margin-top:12px;">ATH: {sub}</div>
-        """
-    elif mode == "vix":
-        v_color, v_state = (colors["green"], "STABLE") if price < 20 else (colors["orange"], "CAUTION") if price < 30 else (colors["red"], "PANIC")
-        content = f"""
-            <div style="font-size:42px; font-weight:800; color:#212529;">{price:,.2f}</div>
-            <div style="color:{v_color}; font-size:13px; font-weight:700; margin-top:12px;">● {v_state}</div>
-        """
-    else: # FX 등 일반 지표
-        content = f'<div style="font-size:42px; font-weight:800; color:#212529;">{price:,.2f}</div>'
+    main_display = ""
+    sub_display = ""
+    footer_html = ""
 
-    st.markdown(f"""
-        <div class="metric-card">
-            <div style="color:#6c757d; font-size:12px; font-weight:600; letter-spacing:1px; margin-bottom:15px;">{title}</div>
-            {content}
-        </div>
-    """, unsafe_allow_html=True)
+    if is_etf:
+        status_color = C_RED if pct >= 0 else C_BLUE
+        # 전고점 대비 하락률(Gap) 표시
+        main_display = f'<div style="font-size:48px; font-weight:800; color:{status_color}; line-height:1;">{pct:+.2f}%</div>'
+        sub_display = f'<div style="font-size:20px; font-weight:600; color:#444; margin-top:8px;">${price:,.2f}</div>'
+        if sub:
+            footer_html = f'<div style="color:#adb5bd; font-size:11px; margin-top:15px; font-weight:400;">ATH {sub}</div>'
+    
+    elif is_vix:
+        v_color, v_state = (C_GREEN, "STABLE") if price < 20 else (C_ORANGE, "CAUTION") if price < 30 else (C_RED, "PANIC")
+        main_display = f'<div style="font-size:45px; font-weight:800; color:#212529; line-height:1;">{price:,.2f}</div>'
+        footer_html = f'<div style="color:{v_color}; font-size:13px; font-weight:700; margin-top:15px; letter-spacing:1px;">● {v_state}</div>'
+    
+    else: # 환율 등 일반 지표
+        main_display = f'<div style="font-size:45px; font-weight:800; color:#212529; line-height:1;">{price:,.2f}</div>'
 
-# 4. 메인 대시보드 로직
-st.title("📊 Global Market Watch")
+    html_content = (
+        f'<div style="background:white; padding:40px 20px; border-radius:24px; '
+        f'box-shadow:0 4px 20px rgba(0,0,0,0.03); border:1px solid #f1f3f5; '
+        f'text-align:center; margin-bottom:20px;">'
+        f'<div style="color:#6c757d; font-size:12px; font-weight:600; '
+        f'letter-spacing:1.2px; margin-bottom:15px; text-transform:uppercase;">{title}</div>'
+        f'{main_display}{sub_display}{footer_html}</div>'
+    )
+    st.markdown(html_content, unsafe_allow_html=True)
 
-@st.fragment(run_every="30s")
+def get_kst_now():
+    return datetime.utcnow() + timedelta(hours=9)
+
+# 5. 메인 레이아웃
+st.title("Market Overview")
+
+@st.fragment(run_every="30s") # ETF는 데이터 지연이 있을 수 있어 30초 정도로 조정
 def render_dashboard():
-    # 병렬 데이터 처리를 위한 티커 리스트
-    etf_tickers = {"Nasdaq 100 (QQQ)": "QQQ", "S&P 500 (VOO)": "VOO"}
-    macro_tickers = {"USD/KRW": "USDKRW=X", "VIX Index": "^VIX"}
+    kst_now = get_kst_now().strftime('%Y-%m-%d %H:%M:%S')
+    st.caption(f"⏱ Last synced: {kst_now} (KST) | Data: Yahoo Finance")
     
-    # 시간 표시
-    kst_now = (datetime.utcnow() + timedelta(hours=9)).strftime('%Y-%m-%d %H:%M:%S')
-    st.caption(f"Last updated: {kst_now} (KST) | Auto-refresh: 30s")
-
-    # 데이터 병렬 수집 (속도 최적화 핵심)
-    all_tickers = list(etf_tickers.values()) + list(macro_tickers.values())
-    with ThreadPoolExecutor() as executor:
-        prices = list(executor.map(get_current_price, all_tickers))
+    # --- 상단: QQQ, VOO (2컬럼 구성) ---
+    st.subheader("Core ETFs (vs ATH)")
+    idx_cols = st.columns(2)
+    etfs = {"Nasdaq 100 (QQQ)": "QQQ", "S&P 500 (VOO)": "VOO"}
     
-    price_map = dict(zip(all_tickers, prices))
-
-    # --- Layout: Core ETFs ---
-    st.subheader("Core ETFs (Drawdown from ATH)")
-    cols = st.columns(2)
-    for i, (name, sym) in enumerate(etf_tickers.items()):
-        with cols[i]:
-            ref = get_historical_high(sym)
-            curr = price_map[sym]
+    for i, (name, sym) in enumerate(etfs.items()):
+        ref = get_high_info(sym)
+        curr = get_live(sym)
+        with idx_cols[i]:
             if ref and curr > 0:
                 gap = ((curr - ref['val']) / ref['val']) * 100
-                draw_card(name, curr, gap, sub=f"${ref['val']:,.1f} ({ref['date']})", mode="etf")
+                draw_card(name, curr, gap, sub=f"${ref['val']:,.1f} ({ref['date']})", is_etf=True)
             else:
-                st.error(f"Data Error: {sym}")
+                st.warning(f"{name} 데이터를 불러오는 중...")
 
-    st.divider()
+    st.markdown("---")
 
-    # --- Layout: Macro Indicators ---
-    m_cols = st.columns(2)
-    with m_cols[0]:
-        usd_price = price_map["USDKRW=X"]
-        draw_card("USD / KRW Exchange Rate", usd_price) if usd_price > 0 else st.warning("USD Data N/A")
-    
-    with m_cols[1]:
-        vix_price = price_map["^VIX"]
-        draw_card("Market Volatility (VIX)", vix_price, mode="vix") if vix_price > 0 else st.warning("VIX Data N/A")
+    # --- 하단: 매크로 지표 ---
+    m_col1, m_col2 = st.columns(2)
+    with m_col1:
+        usd = get_live("USDKRW=X")
+        draw_card("USD / KRW", usd) if usd > 0 else st.error("환율 로드 실패")
+        
+    with m_col2:
+        vix = get_live("^VIX")
+        draw_card("VIX INDEX", vix, is_vix=True) if vix > 0 else st.error("VIX 로드 실패")
 
 render_dashboard()
