@@ -16,7 +16,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -------------------------------
-# 2. 캐시 구조 (수정 핵심)
+# 2. 캐시 구조
 # -------------------------------
 
 @st.cache_resource
@@ -75,11 +75,11 @@ def now_kst():
 
 
 # -------------------------------
-# 3. UI (변경 없음)
+# 3. 카드 UI (VIX 문구 제거)
 # -------------------------------
 
 def draw_card(title, price, pct=None, sub="", is_vix=False, is_etf=False):
-    C_RED, C_BLUE, C_GREEN, C_ORANGE = "#D62828", "#003049", "#2A9D8F", "#F77F00"
+    C_RED, C_BLUE = "#D62828", "#003049"
 
     main_display = ""
     sub_display = ""
@@ -93,12 +93,6 @@ def draw_card(title, price, pct=None, sub="", is_vix=False, is_etf=False):
 
         if sub:
             footer_html = f'<div style="color:#adb5bd; font-size:11px; margin-top:15px;">ATH {sub}</div>'
-
-    elif is_vix:
-        v_color, v_state = (C_GREEN, "STABLE") if price < 20 else (C_ORANGE, "CAUTION") if price < 30 else (C_RED, "PANIC")
-
-        main_display = f'<div style="font-size:45px; font-weight:800; color:#212529;">{price:,.2f}</div>'
-        footer_html = f'<div style="color:{v_color}; font-size:13px; font-weight:700; margin-top:15px;">● {v_state}</div>'
 
     else:
         main_display = f'<div style="font-size:45px; font-weight:800; color:#212529;">{price:,.2f}</div>'
