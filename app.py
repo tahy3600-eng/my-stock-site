@@ -2,61 +2,82 @@ import streamlit as st
 import yfinance as yf
 from datetime import datetime, timedelta
 
+# -------------------------------
 # 1. 페이지 설정
+# -------------------------------
 st.set_page_config(page_title="ETF Market Watch", page_icon="📈", layout="wide")
 
 st.markdown("""
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;800&display=swap');
-    * { font-family: 'Pretendard', sans-serif; }
-    .main { background-color: #f8f9fa; }
-    </style>
-    """, unsafe_allow_html=True)
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;800&display=swap');
+* { font-family: 'Pretendard', sans-serif; }
+.main { background-color: #f8f9fa; }
+</style>
+""", unsafe_allow_html=True)
 
-# 2. 데이터 수집 함수 (안정성 개선)
-@st.cache_data(ttl=300)  # 5분 캐시 (기존 1시간 → 너무 김)
-def get_high_info(symbol):
+# -------------------------------
+# 2. 캐시 레이어 (핵심 최적화)
+# -------------------------------
+
+@st.cache_resource
+def get_tickers(symbols):
+    return {s: yf.Ticker(s) for s in symbols}
+
+
+@st.cache_data(ttl=300)
+def get_high_info(ticker):
     try:
-        t = yf.Ticker(symbol)
-        df = t.history(period="2y")
-
-        if df is None or df.empty:
+        df = ticker.history(period="2y")
+        if df.empty:
             return None
 
-        high_val = df['High'].max()
-        high_date = df['High'].idxmax().strftime('%Y.%m.%d')
+        high = df["High"].max()
+        idx = df["High"].idxmax()
 
-        return {"val": high_val, "date": high_date}
-    except Exception as e:
+        return {
+            "val": float(high),
+            "date": idx.strftime('%Y.%m.%d')
+        }
+    except:
         return None
 
 
-def get_live(symbol):
-    try:
-        t = yf.Ticker(symbol)
+@st.cache_data(ttl=60)
+def get_prices(tickers):
+    result = {}
 
-        # 1순위: fast_info (가장 안정적)
-        if hasattr(t, "fast_info") and "lastPrice" in t.fast_info:
-            price = t.fast_info["lastPrice"]
-            if price and price > 0:
-                return float(price)
+    for sym, t in tickers.items():
+        try:
+            price = None
 
-        # 2순위: 최근 종가 fallback
-        df = t.history(period="5d")
+            fi = getattr(t, "fast_info", None)
+            if fi:
+                price = fi.get("lastPrice")
 
-        if df is None or df.empty:
-            return 0.0
+            if not price:
+                df = t.history(period="5d")
+                if not df.empty:
+                    price = df["Close"].iloc[-1]
 
-        return float(df['Close'].iloc[-1])
+            result[sym] = float(price) if price else 0.0
 
-    except Exception as e:
-        return 0.0
+        except:
+            result[sym] = 0.0
+
+    return result
 
 
-# 3. 카드 UI
+def now_kst():
+    return datetime.utcnow() + timedelta(hours=9)
+
+
+# -------------------------------
+# 3. UI (원본 유지)
+# -------------------------------
+
 def draw_card(title, price, pct=None, sub="", is_vix=False, is_etf=False):
     C_RED, C_BLUE, C_GREEN, C_ORANGE = "#D62828", "#003049", "#2A9D8F", "#F77F00"
-    
+
     main_display = ""
     sub_display = ""
     footer_html = ""
@@ -79,7 +100,7 @@ def draw_card(title, price, pct=None, sub="", is_vix=False, is_etf=False):
     else:
         main_display = f'<div style="font-size:45px; font-weight:800; color:#212529;">{price:,.2f}</div>'
 
-    html_content = f"""
+    html = f"""
     <div style="background:white; padding:40px 20px; border-radius:24px;
     box-shadow:0 4px 20px rgba(0,0,0,0.03); border:1px solid #f1f3f5;
     text-align:center; margin-bottom:20px;">
@@ -90,61 +111,62 @@ def draw_card(title, price, pct=None, sub="", is_vix=False, is_etf=False):
         {footer_html}
     </div>
     """
-
-    st.markdown(html_content, unsafe_allow_html=True)
-
-
-def get_kst_now():
-    return datetime.utcnow() + timedelta(hours=9)
+    st.markdown(html, unsafe_allow_html=True)
 
 
-# 4. 메인 UI
+# -------------------------------
+# 4. 메인
+# -------------------------------
+
 st.title("Market Overview")
 
 @st.fragment(run_every="30s")
-def render_dashboard():
+def dashboard():
 
-    kst_now = get_kst_now().strftime('%Y-%m-%d %H:%M:%S')
-    st.caption(f"⏱ Last synced: {kst_now} (KST) | Data: Yahoo Finance")
-
-    # --- ETF ---
-    st.subheader("Core ETFs (vs ATH)")
-    cols = st.columns(2)
+    st.caption(f"⏱ Last synced: {now_kst().strftime('%Y-%m-%d %H:%M:%S')} (KST) | Data: Yahoo Finance")
 
     etfs = {
         "Nasdaq 100 (QQQ)": "QQQ",
         "S&P 500 (VOO)": "VOO"
     }
 
+    macro = {
+        "USD / KRW": "USDKRW=X",
+        "VIX INDEX": "^VIX"
+    }
+
+    symbols = list(etfs.values()) + list(macro.values())
+
+    tickers = get_tickers(symbols)
+    prices = get_prices(tickers)
+
+    # ETF
+    st.subheader("Core ETFs (vs ATH)")
+    cols = st.columns(len(etfs))
+
     for i, (name, sym) in enumerate(etfs.items()):
-        ref = get_high_info(sym)
-        curr = get_live(sym)
+        ref = get_high_info(tickers[sym])
+        curr = prices[sym]
 
         with cols[i]:
-            if ref is not None and curr > 0:
-                gap = ((curr - ref['val']) / ref['val']) * 100
+            if ref and curr > 0:
+                gap = (curr - ref["val"]) / ref["val"] * 100
                 draw_card(name, curr, gap, sub=f"${ref['val']:,.1f} ({ref['date']})", is_etf=True)
             else:
-                st.warning(f"{name} 데이터 지연 (Yahoo API)")
+                st.warning(f"{name} 데이터 지연")
 
     st.markdown("---")
 
-    # --- 매크로 ---
+    # Macro
     col1, col2 = st.columns(2)
 
     with col1:
-        usd = get_live("USDKRW=X")
-        if usd > 0:
-            draw_card("USD / KRW", usd)
-        else:
-            st.error("환율 데이터 실패")
+        p = prices["USDKRW=X"]
+        draw_card("USD / KRW", p) if p else st.error("환율 오류")
 
     with col2:
-        vix = get_live("^VIX")
-        if vix > 0:
-            draw_card("VIX INDEX", vix, is_vix=True)
-        else:
-            st.error("VIX 데이터 실패")
+        p = prices["^VIX"]
+        draw_card("VIX INDEX", p, is_vix=True) if p else st.error("VIX 오류")
 
 
-render_dashboard()
+dashboard()
