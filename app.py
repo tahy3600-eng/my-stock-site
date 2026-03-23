@@ -16,18 +16,20 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -------------------------------
-# 2. 캐시 레이어 (핵심 최적화)
+# 2. 캐시 구조 (수정 핵심)
 # -------------------------------
 
 @st.cache_resource
-def get_tickers(symbols):
-    return {s: yf.Ticker(s) for s in symbols}
+def get_ticker(sym):
+    return yf.Ticker(sym)
 
 
 @st.cache_data(ttl=300)
-def get_high_info(ticker):
+def get_high_info(sym):
     try:
-        df = ticker.history(period="2y")
+        t = get_ticker(sym)
+        df = t.history(period="2y")
+
         if df.empty:
             return None
 
@@ -43,11 +45,12 @@ def get_high_info(ticker):
 
 
 @st.cache_data(ttl=60)
-def get_prices(tickers):
+def get_prices(symbols):
     result = {}
 
-    for sym, t in tickers.items():
+    for sym in symbols:
         try:
+            t = get_ticker(sym)
             price = None
 
             fi = getattr(t, "fast_info", None)
@@ -72,7 +75,7 @@ def now_kst():
 
 
 # -------------------------------
-# 3. UI (원본 유지)
+# 3. UI (변경 없음)
 # -------------------------------
 
 def draw_card(title, price, pct=None, sub="", is_vix=False, is_etf=False):
@@ -137,15 +140,14 @@ def dashboard():
 
     symbols = list(etfs.values()) + list(macro.values())
 
-    tickers = get_tickers(symbols)
-    prices = get_prices(tickers)
+    prices = get_prices(symbols)
 
     # ETF
     st.subheader("Core ETFs (vs ATH)")
     cols = st.columns(len(etfs))
 
     for i, (name, sym) in enumerate(etfs.items()):
-        ref = get_high_info(tickers[sym])
+        ref = get_high_info(sym)
         curr = prices[sym]
 
         with cols[i]:
