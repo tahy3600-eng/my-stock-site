@@ -193,10 +193,10 @@ st.caption(
 # -------------------------------------------------
 
 etfs = {
-    "SOXX (1x)": "SOXX",
-    "USD (2x)": "USD",
-    "QQQ (1x)": "QQQ",
-    "QLD (2x)": "QLD"
+    "SOXX": "SOXX",
+    "USD": "USD",
+    "QQQ": "QQQ",
+    "QLD": "QLD"
 }
 
 macro = {
