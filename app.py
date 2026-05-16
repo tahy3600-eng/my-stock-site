@@ -13,22 +13,22 @@ st.set_page_config(
 )
 
 # -------------------------------------------------
-# 스타일
+# CSS 스타일
 # -------------------------------------------------
 
 st.markdown("""
 <style>
 
-body {
+html, body, [class*="css"]  {
     background-color: #f8f9fa;
 }
 
 .card {
     background: white;
     padding: 24px;
-    border-radius: 24px;
-    border: 1px solid #f1f3f5;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+    border-radius: 22px;
+    border: 1px solid #e9ecef;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.04);
     text-align: center;
     margin-bottom: 20px;
 }
@@ -57,7 +57,7 @@ body {
 .footer-text {
     color: #adb5bd;
     font-size: 11px;
-    margin-top: 15px;
+    margin-top: 14px;
 }
 
 </style>
@@ -76,10 +76,10 @@ def get_ticker(sym):
 def get_high_info(sym):
 
     try:
-        t = get_ticker(sym)
+        ticker = get_ticker(sym)
 
         # 종가 기준 ATH
-        df = t.history(period="10y")
+        df = ticker.history(period="10y")
 
         if df.empty:
             return None
@@ -104,11 +104,11 @@ def get_prices(symbols):
     for sym in symbols:
 
         try:
-            t = get_ticker(sym)
+            ticker = get_ticker(sym)
 
             price = None
 
-            fi = getattr(t, "fast_info", None)
+            fi = getattr(ticker, "fast_info", None)
 
             if fi:
                 price = (
@@ -119,7 +119,7 @@ def get_prices(symbols):
             # fallback
             if not price:
 
-                df = t.history(period="5d")
+                df = ticker.history(period="5d")
 
                 if not df.empty:
                     price = df["Close"].iloc[-1]
@@ -137,10 +137,10 @@ def now_kst():
 
 
 # -------------------------------------------------
-# 카드 UI
+# ETF 카드
 # -------------------------------------------------
 
-def draw_etf_card(title, price, pct, ath_text):
+def draw_etf_card(title, pct, price, ath):
 
     color = "#D62828" if pct >= 0 else "#003049"
 
@@ -160,7 +160,7 @@ def draw_etf_card(title, price, pct, ath_text):
         </div>
 
         <div class="footer-text">
-            ATH {ath_text}
+            ATH {ath}
         </div>
 
     </div>
@@ -168,6 +168,10 @@ def draw_etf_card(title, price, pct, ath_text):
 
     st.markdown(html, unsafe_allow_html=True)
 
+
+# -------------------------------------------------
+# 매크로 카드
+# -------------------------------------------------
 
 def draw_macro_card(title, value, is_vix=False):
 
@@ -199,7 +203,7 @@ def draw_macro_card(title, value, is_vix=False):
 
 
 # -------------------------------------------------
-# 메인
+# 메인 타이틀
 # -------------------------------------------------
 
 st.title("📈 Semiconductor Market Watch")
@@ -255,9 +259,9 @@ for i, (name, sym) in enumerate(etfs.items()):
 
             draw_etf_card(
                 title=name,
-                price=curr,
                 pct=gap,
-                ath_text=f"${ref['val']:,.1f} ({ref['date']})"
+                price=curr,
+                ath=f"${ref['val']:,.1f} ({ref['date']})"
             )
 
         else:
@@ -270,32 +274,35 @@ for i, (name, sym) in enumerate(etfs.items()):
 st.markdown("---")
 
 # -------------------------------------------------
-# 매크로 섹션
+# Macro 섹션
 # -------------------------------------------------
 
 st.subheader("Macro")
 
 col1, col2 = st.columns(2)
 
-# USD/KRW
+# 환율
 with col1:
 
-    p = prices["USDKRW=X"]
+    usdkrw = prices["USDKRW=X"]
 
-    if p:
-        draw_macro_card("USD / KRW", p)
+    if usdkrw:
+        draw_macro_card(
+            title="USD / KRW",
+            value=usdkrw
+        )
     else:
         st.error("환율 데이터 오류")
 
 # VIX
 with col2:
 
-    p = prices["^VIX"]
+    vix = prices["^VIX"]
 
-    if p:
+    if vix:
         draw_macro_card(
-            "VIX INDEX",
-            p,
+            title="VIX INDEX",
+            value=vix,
             is_vix=True
         )
     else:
