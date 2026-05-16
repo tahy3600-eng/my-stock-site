@@ -16,7 +16,7 @@ st.set_page_config(
 # 데이터 함수
 # -------------------------------------------------
 
-@st.cache_data(ttl=300)  # ✅ Fix 2: cache_resource → cache_data
+@st.cache_data(ttl=300)
 def get_high_info(sym):
     try:
         ticker = yf.Ticker(sym)
@@ -33,7 +33,7 @@ def get_high_info(sym):
             "date": idx.strftime("%Y.%m.%d")
         }
 
-    except Exception as e:  # ✅ Fix 3: 묵음 except → 명시적 오류 처리
+    except Exception as e:
         st.warning(f"{sym} ATH 조회 오류: {e}")
         return None
 
@@ -50,7 +50,6 @@ def get_prices(symbols):
             fi = getattr(ticker, "fast_info", None)
 
             if fi:
-                # ✅ Fix 1: .get() → getattr() (fast_info는 dict가 아닌 객체)
                 price = (
                     getattr(fi, "last_price", None)
                     or getattr(fi, "regular_market_price", None)
@@ -63,7 +62,7 @@ def get_prices(symbols):
 
             result[sym] = float(price) if price else 0.0
 
-        except Exception as e:  # ✅ Fix 3: 묵음 except → 명시적 오류 처리
+        except Exception as e:
             st.warning(f"{sym} 가격 조회 오류: {e}")
             result[sym] = 0.0
 
@@ -93,7 +92,7 @@ def draw_etf_card(title, pct, price, ath):
     ">
         <div style="
             color:#6c757d;
-            font-size:13px;
+            font-size:26px;
             font-weight:600;
             letter-spacing:1px;
             margin-bottom:16px;
@@ -195,7 +194,9 @@ st.caption(
 
 etfs = {
     "SOXX (1x)": "SOXX",
-    "USD (2x)": "USD"
+    "USD (2x)": "USD",
+    "QQQ (1x)": "QQQ",
+    "QLD (2x)": "QLD"
 }
 
 macro = {
