@@ -16,17 +16,10 @@ st.set_page_config(
 # 데이터 함수
 # -------------------------------------------------
 
-@st.cache_resource
-def get_ticker(sym):
-    return yf.Ticker(sym)
-
-
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=300)  # ✅ Fix 2: cache_resource → cache_data
 def get_high_info(sym):
-
     try:
-        ticker = get_ticker(sym)
-
+        ticker = yf.Ticker(sym)
         df = ticker.history(period="10y")
 
         if df.empty:
@@ -40,40 +33,38 @@ def get_high_info(sym):
             "date": idx.strftime("%Y.%m.%d")
         }
 
-    except:
+    except Exception as e:  # ✅ Fix 3: 묵음 except → 명시적 오류 처리
+        st.warning(f"{sym} ATH 조회 오류: {e}")
         return None
 
 
 @st.cache_data(ttl=60)
 def get_prices(symbols):
-
     result = {}
 
     for sym in symbols:
-
         try:
-            ticker = get_ticker(sym)
-
+            ticker = yf.Ticker(sym)
             price = None
 
             fi = getattr(ticker, "fast_info", None)
 
             if fi:
+                # ✅ Fix 1: .get() → getattr() (fast_info는 dict가 아닌 객체)
                 price = (
-                    fi.get("lastPrice")
-                    or fi.get("regularMarketPrice")
+                    getattr(fi, "last_price", None)
+                    or getattr(fi, "regular_market_price", None)
                 )
 
             if not price:
-
                 df = ticker.history(period="5d")
-
                 if not df.empty:
                     price = df["Close"].iloc[-1]
 
             result[sym] = float(price) if price else 0.0
 
-        except:
+        except Exception as e:  # ✅ Fix 3: 묵음 except → 명시적 오류 처리
+            st.warning(f"{sym} 가격 조회 오류: {e}")
             result[sym] = 0.0
 
     return result
@@ -88,7 +79,6 @@ def now_kst():
 # -------------------------------------------------
 
 def draw_etf_card(title, pct, price, ath):
-
     color = "#D62828" if pct >= 0 else "#003049"
 
     html = f"""
@@ -101,7 +91,6 @@ def draw_etf_card(title, pct, price, ath):
         text-align:center;
         margin-bottom:20px;
     ">
-
         <div style="
             color:#6c757d;
             font-size:13px;
@@ -137,7 +126,6 @@ def draw_etf_card(title, pct, price, ath):
         ">
             ATH {ath}
         </div>
-
     </div>
     """
 
@@ -149,14 +137,11 @@ def draw_etf_card(title, pct, price, ath):
 # -------------------------------------------------
 
 def draw_macro_card(title, value, is_vix=False):
-
     color = "#212529"
 
     if is_vix:
-
         if value >= 25:
             color = "#D62828"
-
         elif value <= 15:
             color = "#2A9D8F"
 
@@ -170,7 +155,6 @@ def draw_macro_card(title, value, is_vix=False):
         text-align:center;
         margin-bottom:20px;
     ">
-
         <div style="
             color:#6c757d;
             font-size:13px;
@@ -189,7 +173,6 @@ def draw_macro_card(title, value, is_vix=False):
         ">
             {value:,.2f}
         </div>
-
     </div>
     """
 
@@ -207,7 +190,7 @@ st.caption(
 )
 
 # -------------------------------------------------
-# ETF 목록
+# ETF / Macro 목록
 # -------------------------------------------------
 
 etfs = {
@@ -215,17 +198,12 @@ etfs = {
     "USD (2x)": "USD"
 }
 
-# -------------------------------------------------
-# Macro
-# -------------------------------------------------
-
 macro = {
     "USD / KRW": "USDKRW=X",
     "VIX INDEX": "^VIX"
 }
 
 symbols = list(etfs.values()) + list(macro.values())
-
 prices = get_prices(symbols)
 
 # -------------------------------------------------
@@ -237,19 +215,12 @@ st.subheader("Semiconductor ETFs (vs ATH)")
 cols = st.columns(len(etfs))
 
 for i, (name, sym) in enumerate(etfs.items()):
-
     ref = get_high_info(sym)
     curr = prices[sym]
 
     with cols[i]:
-
         if ref and curr > 0:
-
-            gap = (
-                (curr - ref["val"])
-                / ref["val"]
-                * 100
-            )
+            gap = (curr - ref["val"]) / ref["val"] * 100
 
             draw_etf_card(
                 title=name,
@@ -257,7 +228,6 @@ for i, (name, sym) in enumerate(etfs.items()):
                 price=curr,
                 ath=f"${ref['val']:,.1f} ({ref['date']})"
             )
-
         else:
             st.error(f"{name} 데이터 오류")
 
@@ -268,7 +238,7 @@ for i, (name, sym) in enumerate(etfs.items()):
 st.markdown("---")
 
 # -------------------------------------------------
-# Macro
+# Macro 섹션
 # -------------------------------------------------
 
 st.subheader("Macro")
@@ -276,22 +246,11 @@ st.subheader("Macro")
 col1, col2 = st.columns(2)
 
 with col1:
-
     usdkrw = prices["USDKRW=X"]
-
     if usdkrw:
-        draw_macro_card(
-            title="USD / KRW",
-            value=usdkrw
-        )
+        draw_macro_card(title="USD / KRW", value=usdkrw)
 
 with col2:
-
     vix = prices["^VIX"]
-
     if vix:
-        draw_macro_card(
-            title="VIX INDEX",
-            value=vix,
-            is_vix=True
-        )
+        draw_macro_card(title="VIX INDEX", value=vix, is_vix=True)
