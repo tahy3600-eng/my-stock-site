@@ -129,7 +129,7 @@ def draw_etf_card(title, pct, price, ath):
     </div>
     """
 
-    st.markdown(html, unsafe_allow_html=True)
+    st.html(html)
 
 
 # -------------------------------------------------
@@ -176,7 +176,7 @@ def draw_macro_card(title, value, is_vix=False):
     </div>
     """
 
-    st.markdown(html, unsafe_allow_html=True)
+    st.html(html)
 
 
 # -------------------------------------------------
